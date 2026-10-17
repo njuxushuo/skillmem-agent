@@ -1,0 +1,74 @@
+{
+  "stage": 4,
+  "gate": "PASS",
+  "implementation_sha": "ed0755706edc024fb5f3b51a95e94072e2002716",
+  "review_rounds": [
+    {
+      "round": 1,
+      "status": "FAIL",
+      "issue": "invalid select_skill response omitted from routing usage subset; totals correct"
+    },
+    {
+      "round": 2,
+      "status": "PASS"
+    }
+  ],
+  "pytest": {
+    "passed": 354,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 39.51
+  },
+  "added_tests": 105,
+  "offline_scenarios": {
+    "B0-compatible": 11,
+    "B1": 11,
+    "M": 11,
+    "MS_business_without_selector_comparison": 11
+  },
+  "offline_tasks": {
+    "B0-compatible": 7,
+    "B1": 7,
+    "M": 7,
+    "MS": 7
+  },
+  "coverage": {
+    "covered_lines": 1850,
+    "num_statements": 1976,
+    "percent_covered": 93.62348178137651,
+    "percent_covered_display": "94",
+    "missing_lines": 126,
+    "excluded_lines": 2,
+    "percent_statements_covered": 93.62348178137651,
+    "percent_statements_covered_display": "94"
+  },
+  "sizes": {
+    "src/support_agent": {
+      "files": 19,
+      "lines": 3571,
+      "before_files": 18,
+      "before_lines": 3328
+    },
+    "tests": {
+      "files": 15,
+      "lines": 3803,
+      "before_files": 12,
+      "before_lines": 2854
+    },
+    "scripts": {
+      "files": 2,
+      "lines": 462,
+      "before_files": 2,
+      "before_lines": 462
+    }
+  },
+  "real_api_status": "not_run",
+  "new_paid_requests": 0,
+  "remote_ci": "not_run",
+  "sop_sha256": {
+    "data/skills/cancel.md": "a4ebc73bdac30c22b801ee11f71784c45d4c8022179ffc07d53f5a9e9826e4e2",
+    "data/skills/refund.md": "3c081a9692a0c1a36bdfb72b662e8474b8b6e0f27e0c6f60af49f26a7dd9764f",
+    "data/skills/order_shipping.md": "c9ae888f696cba534012199f81b45e0ccacd1ac60f87ea2864df64591d209c2d",
+    "data/skills/policy_support.md": "2056a5430a3ddb9ee06a8ca89a2e7cfeb240b62d05af824f5cf22743e69917c6"
+  }
+}

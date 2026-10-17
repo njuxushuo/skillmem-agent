@@ -9,7 +9,7 @@
 - Repository：https://github.com/njuxushuo/skillmem-agent；Branch：main。
 - 起点/Stage3标签：`175b4a4ca60255f44c3689cbaf7acf7c5cec0a42`。
 - Stage4实现提交：`ed0755706edc024fb5f3b51a95e94072e2002716`。
-- 报告/脱敏摘要单独提交；完整交付SHA以`git rev-parse stage-4`核验，保留既有标签不移动。
+- 报告/脱敏摘要单独提交；完整交付SHA以`git rev-parse 'stage-4^{commit}'`核验，保留既有标签不移动。
 - 正常HTTPS写入仍缺认证，阶段提交/标签本地保留；对应新远端CI not_run。未force push、未绕过认证。
 
 ## 核心实现与调用链

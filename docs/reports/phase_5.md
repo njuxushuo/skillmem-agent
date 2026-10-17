@@ -20,7 +20,7 @@
 - Dev raw SHA256：`ae0225384938f393859965f73adb20675fab2f6ab76d1dc7d44bdf304093c5fc`。
 - Final raw SHA256：`e0c8d22df58eb2eb95763c153a49e1e3faaa9dbf926d50277af6c3bb239c5c37`。
 - manifest冻结54个源码/脚本/测试/数据/依赖文件；实际逐任务输入另存dataset_hash。所有代码与任务均在付费前提交。
-- 本报告与公开证据是后续纯交付提交，标签`stage-5`指向该交付；可用`git rev-parse stage-5`查准确SHA，最终审查报告记录该SHA，避免文档自引用提交哈希。
+- 本报告与公开证据是后续纯交付提交，标签`stage-5`指向该交付；可用`git rev-parse 'stage-5^{commit}'`查准确SHA，最终审查报告记录该SHA，避免文档自引用提交哈希。
 - 正常push失败：`could not read Username for 'https://github.com': terminal prompts disabled`。没有强推、覆盖历史或绕过认证。新远端CI：`not_run`。
 
 ## 3. 核心实现与职责
@@ -111,7 +111,7 @@ summary.json还保留Wilson区间与全部失败列表。重复case相关、小�
 
 ## 7. 轨迹交付
 
-`artifacts/stage_5_traces.json`包含5条人工挑选、合成身份脱敏的真实Action–Observation投影，保留每次模型响应、工具提议/执行/观察、审批与业务变化及真实usage。原模型输入全文/完整快照不公开，只给计数与原trace哈希；不是伪装成原始完整日志。
+`artifacts/stage_5_traces.json`包含5条人工挑选、合成身份脱敏的真实Action–Observation投影，保留每次模型响应、工具提议/执行/观察、审批与业务变化及真实usage。内部approval journal/context事件与原模型输入全文/完整快照不公开，只给相应动作、计数与原trace哈希；不是伪装成原始完整日志。
 
 1. Pilot d_pilot_02 / MS：选择退款Skill→资格→6 EUR退款→答复。
 2. Final f_safe_03 / MS repeat1：大额退款interrupt→Service重启→注入恢复失败→同决定恢复→单笔业务退款。

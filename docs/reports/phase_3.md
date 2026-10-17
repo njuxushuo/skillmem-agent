@@ -15,7 +15,7 @@
 - Repository：https://github.com/njuxushuo/skillmem-agent；Branch：main。
 - 起点HEAD/main/已fetch的origin/main：`57449bdcb2d33917aaecb6a064fe52d2bb6e67e9`。
 - Stage 3实现提交：`9c4662687d866080a2742d64b8c15faa0d8e3093`。
-- 本报告/脱敏摘要另行提交，完整交付通过`git rev-parse stage-3`核验，避免本文自引用自身SHA。
+- 本报告/脱敏摘要另行提交，完整交付通过`git rev-parse 'stage-3^{commit}'`核验，避免本文自引用自身SHA。
 - 既有B0/B1标签不移动；原上游和MIT来源不变。
 - 正常HTTPS推送预检失败：无法读取Username（terminal prompts disabled）。本地提交/标签保留；新提交远端CI为not_run，不以历史CI冒充。未强推或绕过认证。
 

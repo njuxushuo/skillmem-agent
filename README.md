@@ -146,7 +146,7 @@ SKILLMEM_VARIANT=MS .venv/bin/python scripts/run_offline.py tasks
 
 `evaluation.py:run_cases`支持真实checkpoint历史注入、只读工具超时/长输出夹具、审批Service重建和恢复前后单次故障。每个任务隔离Store、数据库和会话；查询要求工具证据与最终回复事实，写操作比较真实业务后置状态。`scripts/run_benchmark.py`负责冻结文件、共享请求/费用账本和B1/M/MS/B1＋全SOP的配对实验；不会因运行普通离线测试自动发起付费请求。
 
-审批与Memory指标保留适用任务分母；未完成任务和不安全副作用分别统计。真实usage未知时保持null；业务工具、Skill控制步骤和总开销分别记录。Final数据不得用于优化提示、Agent或判定器。当前Stage5最终统计待正式报告确认；没有预先承诺降本或提升。
+审批与Memory指标保留适用任务分母；未完成任务和不安全副作用分别统计。真实usage未知时保持null；业务工具、Skill控制步骤和总开销分别记录。Final数据不得用于优化提示、Agent或判定器。Stage5最终统计与判分限制见[正式报告](docs/reports/phase_5.md)；结果不支持Skill降本结论。
 
 - [技术讲解与面试准备](docs/reports/interview_technical_guide.md)：源码调用链、上游贡献边界和设计取舍。
 - [当前限制](docs/limitations.md)：生产边界、Token估算、规则Oracle和恢复测试范围。

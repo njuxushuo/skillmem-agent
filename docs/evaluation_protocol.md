@@ -1,4 +1,4 @@
-# B0-compatible / B1 测量协议
+# SkillMem Agent：冻结测量协议与历史基线
 
 Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留不改。2026-10-17获批一次在线补充验收，8次真实请求成功；原Oracle因日期/币种表示判0/3，通用格式修正后对原轨迹离线复判3/3，未追加API调用。见[在线补充报告](reports/phase_1_live_smoke.md)。离线与Mock数字仍不代表真实模型效果。
 
@@ -7,7 +7,7 @@ Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留�
 - B0 固定上游：`b6fe9faebff8a1af549ae7b8cabcb0b6e6479cec`，标签 `b0-upstream`；Stage 0：`stage-0`。
 - B0权威锚点`b0-compatible`=`0021b1d96a942bbd4259317bcfd5f494c33d7617`；当前兼容模式保留原8工具/System/历史/内存业务与原控制行为。B1默认启用本阶段可靠执行与SQLite业务存储。
 - Stage 2修改graph/tools/store/service以实现B1；policy/offline_model仍未修改。原`tools_used`仍为提议序列，实际执行见Trace。
-- B1已实现；M/MS/MSP尚未实现。本阶段只有可靠性/兼容性测试，没有架构优化消融结论。
+- B1/M/MS已实现；MSP与LLM摘要未实现。Stage2仅做可靠性/兼容性验证；Stage5真实消融与已知Oracle误拒见本文末节及phase_5报告。
 - `data/eval_tasks.json` 是 **7个 Stage 1 开发夹具**，不是 Stage 5 的 Frozen Final。原11场景文件不变。
 
 ## 运行
@@ -66,7 +66,7 @@ B1要求SDK retries=0，防止绕过显式请求次数预算。B0如果配置 SD
 | 退款审批 | 1001退款89.00，脚本实际消费了同订单同金额、相同reviewer的批准 | 未批准、错误金额或订单、未消费审批、拒绝后仍产生退款 |
 | 取消/正确拒绝 cancel/refusal | 1004被取消且无额外变更；1002被拒且正确说明已发货、状态不变 | 未取消却说完成、拒绝时退款、理由缺失、其他状态变化 |
 
-必要信息当前用固定业务字段/短语匹配，`reply_fact_present`额外识别EUR/€和有效英文日期与ISO日期的等价形式，错误币种/日期仍拒绝；这是可复现的受限 Oracle，不能完整识别否定句、矛盾回答或所有同义表达。适用于这些明确的开发夹具，不能宣称通用语义评判。Stage 5 冻结任务前须扩展分层规则/审查误判。
+必要信息当前用固定业务字段/短语匹配，`reply_fact_present`额外识别EUR/€和有效英文日期与ISO日期的等价形式，错误币种/日期仍拒绝；这是可复现的受限 Oracle，不能完整识别否定句、矛盾回答或所有同义表达。适用于这些明确的开发夹具，不能宣称通用语义评判。Stage5已扩展证据型规则；冻结后的13个确定误拒等已单独审计，原分保留，详见phase_5。
 
 `evaluation.sop_checks` 当前仅测软 SOP **退款提议前，同订单存在成功资格查询**。适用分母为有退款提议的任务，单任务内每次退款提议均计检查；不适用为null。非JSON/非对象资格结果不崩溃、不视作合格，只有`eligible is True`可作为证据，异常结果另计`sop_invalid_result_count`。它与 Task Success 分开：B0允许直接合法退款，业务成功但 SOP=false。此指标不等于完整业务安全或未来四 Skill SOP 的合规率。
 
@@ -78,7 +78,7 @@ B1要求SDK retries=0，防止绕过显式请求次数预算。B0如果配置 SD
 - `tool.proposed`：含有效与非法JSON提议；`tool.attempt`：进入BaseTool；`tool.execution_start`：通过参数验证后真正进入函数。
 - `tool.execution_end`：成功/业务拒绝；`tool.execution_error`：函数异常；`tool.paused`：GraphInterrupt原样抛回，非普通失败。
 - `tool.observation`：ToolMessage，包括不存在工具/参数验证失败；按ToolMessage.id去重避免图回调重复统计；在首次观测时为无id消息分配身份。重复tool_call_id产生的新结果仍记录，工具协议ID不变。
-- `graph.interrupt/resume/error`、`action.user/result`、`task.state/end`：审批决定、状态前后快照与差异、终止原因。含run/thread/step，active_skill=null。
+- `graph.interrupt/resume/error`、`action.user/result`、`task.state/end`：审批决定、状态前后快照与差异、终止原因。含run/thread/step；B0/B1无active_skill，MS记录实际Skill状态。
 
 计数定义：proposed为模型提议数，executed为真实函数入口数，success为非拒绝正常返回数，rejected为业务拒绝，execution_error为函数异常，protocol_error为错误ToolMessage，paused为审批暂停，reentry为重复call_id的函数入口。各错误维度可能重叠，不可简单相加。审批恢复进入相同函数是实际工作，应计入 executed/reentry；不等于新增退款。退款成功以 Store 为准。
 
@@ -140,3 +140,8 @@ Pilot：开发集前3任务（物流、小额退款、大额批准+Service重启
 每个计划任务预写incomplete占位；已执行、失败、not_run全部保留。Task Success分母为全部计划任务；Token用provider字段，unknown为null且另有known小计。真实HTTP次数取账本，LangChain逻辑调用数另列。Skill控制与业务工具执行分别统计，路由模型Token已包含总量。按变体给成功率、失败列表、SOP/记忆/恢复分母、Token与工具总量、延迟mean/median/P95；Wilson区间仅描述本任务运行，重复任务相关，不作独立总体推断。Budget/API阻断不会被当作模型能力失败来解释，但仍在全计划成功率分母中。
 
 离线复算与导出：`.venv/bin/python scripts/run_benchmark.py --export`。它只读取既有账本与结果，输出白名单字段至 `artifacts/results.csv`、`artifacts/summary.json`，不调用API；原始轨迹与完整业务记录仅存Git忽略目录。冻结文件验证失败时不继续付费，保留全部历史结果。
+
+
+### 已完成批次与解释约束
+
+本协议已于代码c63ec4d冻结执行：Pilot12/12、Final360/360，1327次HTTP均200，provider总Token2,429,027。公开结果仅对应这一版本；实际账单未知。Final B1/M/MS/B1_SOP冻结自动Oracle通过数72/85/78/75（各90），不能无条件称真实语义任务成功率。独立失败侧审计确认13项Oracle误拒，另6项最终编号要求过严和2项业务拒绝理由争议，原始判定/哈希均不修改；尚未穷尽成功侧语义误判。详细证据见phase_5和artifacts/oracle_audit.json。下一版Oracle需要新开发样例和独立留出集；禁止删除账本或沿用本授权重复收费。

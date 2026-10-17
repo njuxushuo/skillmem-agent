@@ -1,5 +1,5 @@
 {
-  "notice": "Manually selected synthetic-data Action–Observation projections. All model response/tool/approval events retained; raw input prompts/full snapshots stay ignored locally. Customer names and emails masked; long synthetic padding omitted. Frozen scores unchanged.",
+  "notice": "Manually selected synthetic-data Action–Observation projections. All model response/tool events and graph interrupt/resume plus recovery fixture events retained; internal approval journal/context events and raw input prompts/full snapshots omitted. Raw evidence stays ignored locally. Customer names and emails masked; long synthetic padding omitted. Frozen scores unchanged.",
   "traces": [
     {
       "case_id": "d_pilot_02",

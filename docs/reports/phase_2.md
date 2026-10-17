@@ -41,7 +41,7 @@
 | B0带适配与评测/在线补充版本 | 新增`b0-compatible`与`stage-1-live-smoke` → `0021b1d96a942bbd4259317bcfd5f494c33d7617` |
 | Stage 2实现提交 | `ba40a8b3d363b19e128f12c08e13752b7eaa8d48` |
 | B1代码锚点 | `b1-baseline` → 上述实现提交 |
-| Stage 2最终交付 | `stage-2`，包括实现、本文与脱敏证据；用`git rev-parse stage-2`核实最终SHA |
+| Stage 2最终交付 | `stage-2`，包括实现、本文与脱敏证据；用`git rev-parse 'stage-2^{commit}'`核实最终SHA |
 | 推送 / 本次远端CI | `not_pushed` / `not_run`：当前HTTPS写入认证不可用 |
 
 源码提交后在干净工作树运行7个B1开发任务及重复退款Mock取证，记录`working_tree_dirty=false`、Git SHA、源码/数据/配置哈希。本文随后单独提交，不自引用尚未生成的自身SHA；最终回复提供完整交付SHA。

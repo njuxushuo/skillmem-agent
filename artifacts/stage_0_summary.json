@@ -1,0 +1,74 @@
+{
+  "stage": 0,
+  "gate": "PASS",
+  "variant": "B0 original (no provider/instrumentation adaptation)",
+  "code_environment_commit": "86074ae60e6b43125e0fdef618cae0eaa6037676",
+  "upstream_commit": "b6fe9faebff8a1af549ae7b8cabcb0b6e6479cec",
+  "upstream_tag": "b0-upstream",
+  "environment": {
+    "python": "3.12.9",
+    "platform": "Linux x86_64",
+    "locked_distributions": 62,
+    "dependency_install": "offline wheelhouse; exact versions and SHA-256",
+    "project_install": "editable --no-deps --no-build-isolation"
+  },
+  "pytest": {
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 2.23
+  },
+  "coverage": {
+    "kind": "statement",
+    "covered": 507,
+    "total": 571,
+    "percent": 88.79159369527146
+  },
+  "offline_scenarios": {
+    "passed": 11,
+    "total": 11,
+    "independent_additional_pytest_tests": false
+  },
+  "checks": {
+    "pip_check": "PASS",
+    "ruff_check": "PASS",
+    "ruff_format": "PASS",
+    "network_guard_denied": 3,
+    "lock_versions_matched": 62,
+    "research_files_unchanged": 26,
+    "upstream_files_identical": 22,
+    "ignored_probes": 11,
+    "env_example_explicitly_included": true
+  },
+  "hashes": {
+    "requirements.lock": "fb98eda0d02b67d4276a6e820e0b1b3046bdf00e9cd38bc4e02fca893ee4770e",
+    "data/store.json": "246f50b7ad509a1a96046676ca9fe643a40a63f11a1b2c8d20fdf725523147de",
+    "data/policies.md": "a39d4544e6a5a1c8eb6da3c8ce1ed190d81e66f4e4509a8192781b3ac273f6bf",
+    "data/scenarios.json": "cf95836023bf1b195067c1941f8c52b7997f1374cac0951810abc4ad2aade2c3",
+    "docs/architecture.md": "b6a18e84d10aad33a0f41ea50f2e257b698f1a776dd87affc9282135b45d4fa0",
+    "docs/implementation_plan.md": "57f626ae9960c75c5dd567895e2ef322519a8764a6bb1f19ce0be447803c14cd"
+  },
+  "real_llm_evaluation": {
+    "status": "not_run",
+    "provider": null,
+    "model": null,
+    "task_success_rate": null,
+    "sop_rate": null,
+    "tokens": null,
+    "latency": null,
+    "paid_api_requests": 0
+  },
+  "privacy": {
+    "raw_traces_committed": false,
+    "database_files_committed": false,
+    "credential_patterns_found": 0
+  },
+  "ci_remote_status": "not_run at report creation; local equivalent checks passed",
+  "publication": {
+    "remote": "https://github.com/njuxushuo/skillmem-agent",
+    "branch": "main",
+    "status": "not_pushed",
+    "reason": "HTTPS push dry-run could not read Username; no configured GitHub credentials",
+    "delivery_tag": "stage-0"
+  }
+}

@@ -108,3 +108,7 @@ Key、authorization等字段和常见凭据格式脱敏，runner显式注册当�
 工具错误输出JSON含error/status/retryable。retryable表示临时性质，**不是自动重试指令**；如业务成功而checkpoint失败，仅从原checkpoint显式恢复，稳定操作回执阻止二次副作用。本阶段93.33%语句覆盖率、153pytest、B0/B1各11/7场景/任务均为离线软件证据；本阶段真实API为not_run、Token和费用未知，不填0。
 
 Stage 3/4引入优化时须继续使用同一ExecutionLimits、工具/审批实现、固定模型/数据/日期和usage口径；若启用不同预算必须另列实验组，不能直接比较原组的成本和成功率。B1使用全量8工具与原历史，尚未实现Context Token Budget。
+
+## Stage 3 配置与诊断
+
+新增M变体复用B1安全层。`run_cases`可传`context_strategy/context_budget`，结果与task.start保存有效设置。`context.built`记录估算及分项，`context.measured`按同次模型call_id关联actual_input_tokens与usage_source；Mock计量与真实provider严格分开。B1 context字段null，完整checkpoint不裁剪。G3阶段仅离线/Mock验证，不代表M真实任务效果。

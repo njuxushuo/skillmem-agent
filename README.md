@@ -2,7 +2,7 @@
 
 基于 [nitanandsinghupw/langgraph-support-agent](https://github.com/nitanandsinghupw/langgraph-support-agent) 的轻量单 Agent 电商售后研究项目，沿用 LangGraph、原8个业务工具、政策校验和人工审批。
 
-**当前完成 Stage 2：B1 执行可靠性基线。** SQLite业务持久化、退款/取消幂等、审批恢复、单工具Guard与执行预算已通过离线故障测试。Stage 1真实DeepSeek验收保留为历史证据；本阶段付费API调用0。Skill、TaskMemory、Context压缩及Planning尚未实现。详见[Stage 2报告](docs/reports/phase_2.md)。
+**当前完成 Stage 3：TaskMemory 与预算 Context（G3 PASS）。** 新增 M 变体，B1 的 SQLite 幂等、审批恢复和执行限制共用；B0/B1 独立保留。249项离线测试通过；详见[Stage 3报告](docs/reports/phase_3.md)，真实模型消融尚未运行。
 
 
 ## 来源与版本
@@ -44,7 +44,7 @@ python3.12 -m venv .venv
 .venv/bin/ruff format --check src tests scripts
 ```
 
-校验入口强制 `offline`、移除 API Key 环境项、关闭外部 tracing、禁止 Python socket 连接，然后运行原始 `pytest` 和 `python -m support_agent.evaluate --provider offline`；没有更改原测试或场景逻辑。原 evaluator 失败退出码缺陷暂时保留，原 pytest 中的场景汇总断言承担门禁。
+校验入口强制 `offline`、移除 API Key 环境项、关闭外部 tracing、禁止 Python socket 连接，然后运行原始 `pytest` 和 `python -m support_agent.evaluate --provider offline`；没有更改原测试或场景逻辑。场景与任务评测失败均返回非零退出码。
 
 原24测试和11场景保留，新增 DeepSeek Mock、Tracing、Oracle/隔离测试及7个开发评测任务。原24测试中有1个汇总运行11场景，不能重复计为35个独立测试。Stage 0 证据见 [phase_0](docs/reports/phase_0.md)，Stage 1 实际结果见 [phase_1](docs/reports/phase_1.md)。规则模型与 Mock 不代表真实 LLM 成功率。
 
@@ -79,9 +79,9 @@ skillmem-agent/
 └── README.md、LICENSE、pyproject.toml、requirements.lock
 ```
 
-本地`research/`取证快照及旧笔记不提交；`.local/`保存依赖缓存、原始日志和运行数据库。没有提前创建空的`state.py/memory.py/context.py/skills.py/planning.py`。
+本地`research/`取证快照及旧笔记不提交；`.local/`保存依赖缓存、原始日志和运行数据库。Stage 3新增`state.py/memory.py/context.py`，均有实际调用与测试；Skill和Planning尚未实现。
 
-[实施规范](docs/implementation_plan.md)决定功能范围和Gate；[架构规范](docs/architecture.md)决定目录和依赖边界。Stage 2结束后等待审查，禁止自动进入Stage 3。
+[实施规范](docs/implementation_plan.md)决定功能范围和Gate；[架构规范](docs/architecture.md)决定目录和依赖边界。本轮经授权，Stage 3–5依次通过独立审查与测试后自动推进。
 
 
 ## Stage 1 测量与 DeepSeek
@@ -119,3 +119,13 @@ SKILLMEM_VARIANT=B0-compatible .venv/bin/python scripts/run_offline.py tasks
 审批使用`approval_id`匹配决定；重复相同决定返回已保存结果，不同决定返回409。同会话出现过多个审批后必须提供ID。中途失败保留原决定，重复同一审批决定即可恢复；不能更换批准人/备注来覆盖既定决定。非审批checkpoint故障通过服务接口`retry_turn(customer_id, thread_id)`显式恢复，不重新提交原用户消息。该维护接口尚未暴露HTTP路由。
 
 B0数据库缺少历史业务记录，禁止直接用B1打开后重新种入订单；使用新B1数据库，或人工对账后另行迁移。CLI/APIs默认共用同一数据库，隔离演示时请配置不同路径。程序没有接入任何真实支付或订单系统。
+
+## Stage 3 上下文配置
+
+`SKILLMEM_VARIANT=M`启用来源可追踪的任务记忆和上下文视图。`SKILLMEM_CONTEXT_STRATEGY`支持`structured_memory`（默认）、`full_history`、`legacy_trim`。`SKILLMEM_CONTEXT_BUDGET=16384`是总估算窗口，包含工具Schema、系统规则、任务状态、历史、模型输出预留和安全余量。UTF-8字节估算是保守诊断，不是DeepSeek精确Tokenizer或真实计费用量。固定规则/最新请求放不下时明确终止；完整checkpoint历史不删除。
+
+```bash
+SKILLMEM_VARIANT=M .venv/bin/python scripts/run_offline.py tasks
+```
+
+B0/B1仍使用原历史策略；M纯上下文策略对照可显式指定`full_history`或`legacy_trim`，它们超预算时失败，不暗中进行额外裁剪。用户约束属于未验证输入，工具事实带来源和历史快照标记；业务执行仍由原Policy重验。

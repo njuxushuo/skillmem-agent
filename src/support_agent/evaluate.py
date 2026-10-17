@@ -47,7 +47,7 @@ def main() -> None:
     parser.add_argument("--tasks", type=Path, help="Versioned multi-turn evaluation JSON")
     parser.add_argument("--output", type=Path, default=Path(".local/runs"))
     parser.add_argument("--repeat", type=int, default=1)
-    parser.add_argument("--variant", choices=["B0-compatible", "B1"])
+    parser.add_argument("--variant", choices=["B0-compatible", "B1", "M"])
     parser.add_argument("--max-model-calls", type=int, default=8)
     parser.add_argument("--max-tool-calls", type=int, default=8)
     parser.add_argument("--tool-timeout", type=float, default=5)

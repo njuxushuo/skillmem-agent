@@ -20,6 +20,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.errors import GraphRecursionError
 from langgraph.types import Command
 
+from support_agent.context import STRATEGIES, ContextBudget
 from support_agent.execution import ExecutionControl, ExecutionLimits, database_lock
 from support_agent.graph import build_graph
 from support_agent.models import get_model
@@ -178,26 +179,31 @@ class SupportService:
         trace: TraceRecorder | None = None,
         variant: str | None = None,
         limits: ExecutionLimits | None = None,
+        context_strategy: str | None = None,
+        context_budget: ContextBudget | None = None,
     ) -> None:
         """B1 db_path persists business, receipts, budgets, approvals and checkpoints; None is ephemeral."""
         with database_lock(db_path, "initialize"):
             self.variant = variant or os.getenv("SKILLMEM_VARIANT", "B1")
-            if self.variant not in {"B0-compatible", "B1"}:
-                raise ValueError("Only B0-compatible and B1 are implemented")
+            if self.variant not in {"B0-compatible", "B1", "M"}:
+                raise ValueError("Only B0-compatible, B1 and M are implemented")
+            self.memory_enabled = self.variant == "M"
+            self.context_strategy = None
+            self.context_budget = None
             if db_path:
                 Path(db_path).parent.mkdir(parents=True, exist_ok=True)
             data_dir = data_dir or default_data_dir()
             self.store = store or Store.load(data_dir / "store.json")
             self.policy = policy or PolicyConfig()
             self.control = None
-            if self.variant == "B1":
+            if self.variant != "B0-compatible":
                 self.store.persist(db_path)
                 self.control = ExecutionControl(db_path, limits or ExecutionLimits())
             tools = make_tools(
                 self.store,
-                PolicyBase(data_dir / "policies.md", chinese_aliases=self.variant == "B1"),
+                PolicyBase(data_dir / "policies.md", chinese_aliases=self.variant != "B0-compatible"),
                 self.policy,
-                variant=self.variant,
+                variant="B1" if self.control else "B0-compatible",
             )
 
             self.trace = trace
@@ -220,8 +226,31 @@ class SupportService:
             if self.control and getattr(model, "max_retries", 0) != 0:
                 self.close()
                 raise ValueError("B1 requires model max_retries=0 so request budgets count all attempts")
+            if self.memory_enabled:
+                self.context_strategy = context_strategy or os.getenv("SKILLMEM_CONTEXT_STRATEGY", "structured_memory")
+                output_limit = getattr(model, "max_tokens", None) or getattr(model, "max_completion_tokens", None)
+                self.context_budget = context_budget or ContextBudget(
+                    total_tokens=int(os.getenv("SKILLMEM_CONTEXT_BUDGET", "16384")),
+                    output_tokens=output_limit or 1024,
+                )
+                if self.context_strategy not in STRATEGIES or (
+                    output_limit and self.context_budget.output_tokens < output_limit
+                ):
+                    self.close()
+                    raise ValueError("Invalid context strategy or output reserve below model output limit")
+            elif context_strategy is not None or context_budget is not None:
+                self.close()
+                raise ValueError("Context settings require the M variant")
             self.graph = build_graph(
-                model, tools, self.store.customers, checkpointer, control=self.control, trace=trace
+                model,
+                tools,
+                self.store.customers,
+                checkpointer,
+                control=self.control,
+                trace=trace,
+                memory_enabled=self.memory_enabled,
+                context_strategy=self.context_strategy,
+                context_budget=self.context_budget,
             )
 
             if self.control and db_path:
@@ -300,7 +329,9 @@ class SupportService:
     def _config(self, customer_id: str, thread_id: str) -> dict:
         return {
             "configurable": {"thread_id": thread_id, "customer_id": customer_id},
-            "recursion_limit": 2 * self.control.limits.model_calls + 4 if self.control else MAX_STEPS_PER_TURN,
+            "recursion_limit": (3 if self.memory_enabled else 2) * self.control.limits.model_calls + 4
+            if self.control
+            else MAX_STEPS_PER_TURN,
         }
 
     def _run(self, graph_input, customer_id: str, thread_id: str) -> ChatResult:
@@ -309,7 +340,38 @@ class SupportService:
             config["configurable"]["deadline"] = time() + self.control.limits.turn_seconds
         if self.trace is not None:
             config["callbacks"] = [self.trace]
-        before = len(self.graph.get_state(config).values.get("messages", []))
+        initial_state = self.graph.get_state(config)
+        if self.memory_enabled:
+            # Trusted projection only; do not update_state on an interrupt, which changes resume scheduling.
+            row = self.registry.approval(thread_id)
+            if row and row["state"] != "resolved":
+                config["configurable"]["pending_approval"] = {
+                    **row["details"],
+                    "state": row["state"],
+                    "approval_id": row["approval_id"],
+                }
+            elif initial_state.interrupts:
+                config["configurable"]["pending_approval"] = {
+                    **initial_state.interrupts[0].value,
+                    "state": "pending",
+                    "approval_id": initial_state.interrupts[0].id,
+                }
+            if config["configurable"].get("pending_approval"):
+                latest_call = next(
+                    (
+                        (message.id, call)
+                        for message in reversed(initial_state.values.get("messages", []))
+                        if isinstance(message, AIMessage)
+                        for call in message.tool_calls
+                        if call["name"] == "request_refund"
+                    ),
+                    None,
+                )
+                if latest_call:
+                    config["configurable"]["pending_approval"].update(
+                        source_message_id=latest_call[0], source_tool_call_id=latest_call[1]["id"]
+                    )
+        before = len(initial_state.values.get("messages", []))
         try:
             self.graph.invoke(graph_input, config)
         except GraphRecursionError:

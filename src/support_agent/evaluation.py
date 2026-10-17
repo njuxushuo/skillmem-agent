@@ -20,6 +20,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from support_agent.context import ContextBudget
 from support_agent.execution import ExecutionLimits
 from support_agent.models import get_model
 from support_agent.service import SupportService, default_data_dir
@@ -282,11 +283,13 @@ def run_cases(
     repeat: int = 1,
     variant: str | None = None,
     limits: ExecutionLimits | None = None,
+    context_strategy: str | None = None,
+    context_budget: ContextBudget | None = None,
 ) -> dict:
     """Run every case independently; return public-shaped metrics, keep raw evidence local."""
     variant = variant or os.getenv("SKILLMEM_VARIANT", "B1")
     limits = limits or ExecutionLimits()
-    if variant not in {"B0-compatible", "B1"}:
+    if variant not in {"B0-compatible", "B1", "M"}:
         raise ValueError("Unsupported variant")
     if not isinstance(cases, list) or not cases:
         raise ValueError("cases must be a nonempty list")
@@ -317,7 +320,7 @@ def run_cases(
                 "failure_reason": None,
                 "model_config_hash": None,
                 "sop_compliance": None,
-                "execution_limits": asdict(limits) if variant == "B1" else None,
+                "execution_limits": asdict(limits) if variant != "B0-compatible" else None,
             }
             service = None
             try:
@@ -340,13 +343,19 @@ def run_cases(
                         trace=trace,
                         variant=variant,
                         limits=limits,
+                        context_strategy=context_strategy,
+                        context_budget=context_budget,
                     )
+                    result["context_strategy"] = service.context_strategy
+                    result["context_budget"] = asdict(service.context_budget) if service.context_budget else None
                     trace.emit(
                         "task.start",
+                        context_strategy=result["context_strategy"],
+                        context_budget=result["context_budget"],
                         case=case.model_dump(mode="json"),
                         model_config=config,
                         variant=variant,
-                        execution_limits=asdict(limits) if variant == "B1" else None,
+                        execution_limits=asdict(limits) if variant != "B0-compatible" else None,
                         provenance=meta,
                         business_before=before,
                     )

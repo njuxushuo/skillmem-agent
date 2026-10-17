@@ -13,6 +13,7 @@ import runpy
 import socket
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 def configure_offline() -> None:
@@ -43,14 +44,17 @@ def main() -> None:
     os.chdir(root)
     sys.path.insert(0, str(root / "src"))
     configure_offline()
-    if command == "pytest":
-        sys.argv = ["pytest", *args]
-        runpy.run_module("pytest", run_name="__main__")
-    else:
-        sys.argv = ["support_agent.evaluate", "--provider", "offline"]
-        if command == "tasks":
-            sys.argv += ["--tasks", "data/eval_tasks.json"]
-        runpy.run_module("support_agent.evaluate", run_name="__main__")
+    # api.py has a module-level demo app; even selective tests must not open the runtime DB.
+    with TemporaryDirectory(prefix="skillmem-offline-") as temp:
+        os.environ["SUPPORT_DB"] = str(Path(temp) / "demo.sqlite")
+        if command == "pytest":
+            sys.argv = ["pytest", *args]
+            runpy.run_module("pytest", run_name="__main__")
+        else:
+            sys.argv = ["support_agent.evaluate", "--provider", "offline"]
+            if command == "tasks":
+                sys.argv += ["--tasks", "data/eval_tasks.json"]
+            runpy.run_module("support_agent.evaluate", run_name="__main__")
 
 
 if __name__ == "__main__":

@@ -403,3 +403,13 @@ response = model.invoke(context_view, config=config.runnable_config)
 ## 10. 给 Codex 的执行指令（需同时阅读两份规范）
 
 > 在每个 Stage 开始前同时阅读《SkillMem Agent V1 实施方案》和本《项目架构与目录规范》。功能范围与验收 Gate 依实施方案，目录/职责/依赖边界依本文档。**只执行当前 Stage，结束后提交 Git commit 与 `docs/reports/phase_N.md`，附 Architecture & Directory Audit，等待审查确认再进行下一阶段。** 不以“简历描述需要”作为添加未测试功能的理由，不修改上游研究快照，不上传密钥/未经脱敏数据。遇到规范冲突或实际源码不符，先报告证据与最小替代设计，不擅自扩散改造范围。
+
+## 11. Stage 3 已实现边界（目标规范之上的状态记录）
+
+截至 Stage 3，新增 `state.py`（SupportState/TaskMemory）、`memory.py`（用户约束与可信观察）、`context.py`（预算内模型输入视图）；前三阶段的业务/审批实现仍复用。B0/B1保持独立，M新增 `tools → observe → agent` 边。Service只读取配置和可信审批快照，提取/裁剪算法不进入Service；Graph组装，不复制业务Policy。
+
+用户明确订单焦点不能由非当前订单工具结果覆盖。Observation身份由提议AI消息ID与tool_call_id组成，既支持恢复去重，也兼容后续响应复用供应商call ID；冲突结果使对应事实失效。仅工具Observation形成可信事实，用户目标/约束均标明来源与未验证属性。审批投影从registry/interrupt取得，并与完整checkpoint中的对应完成ToolMessage核对。
+
+M的三个上下文策略只影响模型输入，完整Messages保留。估算使用UTF-8字节与消息封装余量，计入System、Schema、任务投影、历史、输出与余量；不是精确计费tokenizer。B1仍使用原40消息策略。未知旧checkpoint字段采用安全默认值，旧观察不得覆盖最新用户焦点或完成新任务。历史旧B0业务数据库仍遵守Stage 2的拒绝自动迁移限制。
+
+必要接线修改包括Service变体/配置、Evaluation配置元数据、Tracing估算与真实usage关联、离线验证脚本临时数据库隔离；没有新增框架或依赖。`service.py`超过原行数提醒阈值，仍包含既有registry与审批编排，暂不为行数强制拆分。Skill/Planning在本阶段尚未实现。

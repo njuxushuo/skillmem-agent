@@ -63,6 +63,8 @@ class TraceRecorder(BaseCallbackHandler):
         self._starts: dict[str, float] = {}
         self._tool_context = ContextVar(f"trace_tool_{run_id}", default=None)
         self._observed: set[str] = set()
+        self._context: dict | None = None
+        self._request_contexts: dict[str, dict] = {}
         self._file = os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w")
 
     def clean(self, value):
@@ -84,6 +86,8 @@ class TraceRecorder(BaseCallbackHandler):
 
     def emit(self, event: str, **fields) -> None:
         with self._lock:
+            if event == "context.built":
+                self._context = self.clean(fields.get("diagnostics", {}))
             row = self.clean(
                 {
                     "run_id": self.run_id,
@@ -108,6 +112,9 @@ class TraceRecorder(BaseCallbackHandler):
 
     def on_chat_model_start(self, serialized, messages, *, run_id, **kwargs):
         self._starts[str(run_id)] = perf_counter()
+        if self._context is not None:
+            self._request_contexts[str(run_id)] = self._context
+            self._context = None
         self.emit(
             "model.request",
             call_id=str(run_id),
@@ -140,6 +147,15 @@ class TraceRecorder(BaseCallbackHandler):
             usage_source=self.source,
             latency_ms=self._elapsed(run_id),
         )
+        diagnostics = self._request_contexts.pop(str(run_id), None)
+        if diagnostics is not None:
+            self.emit(
+                "context.measured",
+                call_id=str(run_id),
+                diagnostics=diagnostics,
+                actual_input_tokens=usage_of(message)["input_tokens"],
+                usage_source=self.source,
+            )
         for call in [*message.tool_calls, *message.invalid_tool_calls]:
             self.emit(
                 "tool.proposed",
@@ -150,6 +166,7 @@ class TraceRecorder(BaseCallbackHandler):
             )
 
     def on_llm_error(self, error, *, run_id, **kwargs):
+        self._request_contexts.pop(str(run_id), None)
         category = "api_error"
         cause, seen = error, set()
         while cause is not None and id(cause) not in seen:

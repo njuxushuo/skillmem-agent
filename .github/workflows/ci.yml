@@ -32,9 +32,11 @@ jobs:
           python -m pip check
           ruff check src tests scripts
           ruff format --check src tests scripts
-      - name: B0 regression and B1 reliability tests, with network disabled
+      - name: B0/B1 regression and Memory/Context tests, with network disabled
         run: python scripts/run_offline.py pytest -q --cov=support_agent --cov-report=term-missing
       - name: Original 11 scenarios, with network disabled
         run: python scripts/run_offline.py scenarios
       - name: B1 task runner, with network disabled
         run: python scripts/run_offline.py tasks
+      - name: M task runner, with network disabled
+        run: SKILLMEM_VARIANT=M python scripts/run_offline.py tasks

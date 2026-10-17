@@ -10,6 +10,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage, trim_messages
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.errors import GraphInterrupt
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -17,7 +18,10 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from pydantic import ValidationError
 
+from support_agent.context import ContextBudget, ContextError, build_model_context
 from support_agent.execution import ExecutionControl, ExecutionStopped, check_deadline, tool_error
+from support_agent.memory import observe_tool_results, user_memory_update
+from support_agent.state import SupportState
 
 SYSTEM_PROMPT = """You are the customer support assistant for Nordwind, an e-bike shop.
 You are talking to {customer_name}. You can only see and change this customer's orders.
@@ -41,10 +45,14 @@ def build_graph(
     *,
     control: ExecutionControl | None = None,
     trace=None,
+    memory_enabled: bool = False,
+    context_strategy: str | None = None,
+    context_budget: ContextBudget | None = None,
 ) -> CompiledStateGraph:
     model_with_tools = model.bind_tools(list(tools))
+    schemas = [convert_to_openai_tool(tool) for tool in tools] if memory_enabled else []
 
-    def agent(state: MessagesState, config: RunnableConfig) -> dict:
+    def agent(state, config: RunnableConfig) -> dict:
         customer_id = (config.get("configurable") or {}).get("customer_id", "")
         name = customers.get(customer_id, {}).get("name", "a customer")
         # Keep long conversations within the context window; always start on a customer message.
@@ -59,28 +67,56 @@ def build_graph(
         if control is None:
             reply = model_with_tools.invoke([SystemMessage(SYSTEM_PROMPT.format(customer_name=name)), *history], config)
             return {"messages": [reply]}
+        updates = {}
         try:
+            if memory_enabled:
+                updates = user_memory_update(state)
+                context, diagnostics = build_model_context(
+                    {**state, **updates},
+                    system_policy=SYSTEM_PROMPT.format(customer_name=name),
+                    tool_schemas=schemas,
+                    budget=context_budget,
+                    strategy=context_strategy,
+                    pending_approval=config["configurable"].get("pending_approval"),
+                )
+                updates["context_diagnostics"] = diagnostics
+                if trace:
+                    trace.emit("context.built", diagnostics=diagnostics, active_skill=state.get("active_skill"))
+            else:
+                context = [SystemMessage(SYSTEM_PROMPT.format(customer_name=name)), *history]
             control.consume(config["configurable"]["thread_id"], "model_calls", config["configurable"].get("deadline"))
-            reply = model_with_tools.invoke([SystemMessage(SYSTEM_PROMPT.format(customer_name=name)), *history], config)
-            return {"messages": [reply]}
+            kwargs = {}
+            if (
+                memory_enabled
+                and not getattr(model, "max_tokens", None)
+                and not getattr(model, "max_completion_tokens", None)
+            ):
+                kwargs["max_tokens"] = context_budget.output_tokens
+            reply = model_with_tools.invoke(context, config, **kwargs)
+            return {**updates, "messages": [reply]}
         except GraphInterrupt:
             raise
         except Exception as exc:
             reason = (
                 exc.reason
-                if isinstance(exc, ExecutionStopped)
+                if isinstance(exc, (ExecutionStopped, ContextError))
                 else "model_timeout"
                 if isinstance(exc, TimeoutError)
                 else "model_error"
             )
+            if isinstance(exc, ContextError):
+                updates["context_diagnostics"] = exc.diagnostics
+                if trace:
+                    trace.emit("context.built", diagnostics=exc.diagnostics, error=reason)
             if trace:
                 trace.emit("execution.stopped", reason=reason, error=type(exc).__name__)
             return {
+                **updates,
                 "messages": [AIMessage("The request could not be completed. Please contact a colleague.")],
                 "stop_reason": reason,
             }
 
-    graph = StateGraph(ExecutionState if control else MessagesState)
+    graph = StateGraph(SupportState if memory_enabled else ExecutionState if control else MessagesState)
     graph.add_node("agent", agent)
     graph.add_node(
         "tools", guarded_tools(tools, control, trace) if control else ToolNode(list(tools), handle_tool_errors=True)
@@ -89,7 +125,18 @@ def build_graph(
     graph.add_conditional_edges(
         "agent", b1_route if control else tools_condition
     )  # tool calls -> "tools", otherwise END
-    if control:
+    if memory_enabled:
+
+        def observe(state):
+            # A B1 pending checkpoint can resume directly at tools without visiting agent.
+            # Bootstrap unseen user intent before applying its later trusted result, not after it.
+            user_updates = user_memory_update(state)
+            return {**user_updates, **observe_tool_results({**state, **user_updates})}
+
+        graph.add_node("observe", observe)
+        graph.add_conditional_edges("tools", lambda state: END if state.get("stop_reason") else "observe")
+        graph.add_edge("observe", "agent")
+    elif control:
         graph.add_conditional_edges("tools", lambda state: END if state.get("stop_reason") else "agent")
     else:
         graph.add_edge("tools", "agent")

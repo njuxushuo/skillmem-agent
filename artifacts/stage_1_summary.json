@@ -1,0 +1,372 @@
+{
+  "stage": 1,
+  "gate": "PASS",
+  "code_commit": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+  "real_deepseek": {
+    "status": "not_run",
+    "reason": "No approved paid API budget; no live smoke attempted",
+    "api_calls": 0
+  },
+  "verification": {
+    "pytest_passed": 58,
+    "original_pytest": 24,
+    "new_pytest": 34,
+    "failed": 0,
+    "skipped": 0,
+    "original_scenarios_passed": 11,
+    "development_tasks_passed": 7,
+    "coverage": {
+      "covered_lines": 874,
+      "num_statements": 945,
+      "percent_covered": 92.48677248677248
+    },
+    "ruff_check": "passed",
+    "ruff_format_files": 21,
+    "pip_check": "passed"
+  },
+  "offline": {
+    "provider": "offline",
+    "tasks": 7,
+    "passed": 7,
+    "repeat": 1,
+    "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+    "tool_proposed_total": 11,
+    "tool_executed_total": 13,
+    "sop_applicable_tasks": 3,
+    "sop_passed_tasks": 3,
+    "input_tokens": null,
+    "output_tokens": null,
+    "total_tokens": null,
+    "results": [
+      {
+        "case_id": "shipping_multi_turn",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": null,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "tool_proposed_count": 2,
+        "tool_executed_count": 2,
+        "tool_success_count": 2,
+        "tool_rejected_count": 0,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 0,
+        "tool_reentry_count": 0,
+        "model_calls": 4,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 4,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      },
+      {
+        "case_id": "order_details",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": null,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "tool_proposed_count": 1,
+        "tool_executed_count": 1,
+        "tool_success_count": 1,
+        "tool_rejected_count": 0,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 0,
+        "tool_reentry_count": 0,
+        "model_calls": 2,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 2,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      },
+      {
+        "case_id": "refund_small",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": true,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 1,
+            "passed": 1
+          }
+        },
+        "tool_proposed_count": 2,
+        "tool_executed_count": 2,
+        "tool_success_count": 2,
+        "tool_rejected_count": 0,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 0,
+        "tool_reentry_count": 0,
+        "model_calls": 3,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 3,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      },
+      {
+        "case_id": "refund_approved",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": true,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 1,
+            "passed": 1
+          }
+        },
+        "tool_proposed_count": 2,
+        "tool_executed_count": 3,
+        "tool_success_count": 2,
+        "tool_rejected_count": 0,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 1,
+        "tool_reentry_count": 1,
+        "model_calls": 3,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 3,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      },
+      {
+        "case_id": "refund_denied",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": true,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 1,
+            "passed": 1
+          }
+        },
+        "tool_proposed_count": 2,
+        "tool_executed_count": 3,
+        "tool_success_count": 1,
+        "tool_rejected_count": 1,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 1,
+        "tool_reentry_count": 1,
+        "model_calls": 3,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 3,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      },
+      {
+        "case_id": "cancel_processing",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": null,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "tool_proposed_count": 1,
+        "tool_executed_count": 1,
+        "tool_success_count": 1,
+        "tool_rejected_count": 0,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 0,
+        "tool_reentry_count": 0,
+        "model_calls": 2,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 2,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      },
+      {
+        "case_id": "cancel_shipped_refused",
+        "variant": "B0-compatible",
+        "repeat": 1,
+        "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+        "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+        "working_tree_dirty": false,
+        "dataset_hash": "f4ebb43adf785c0c130d8ee0a811346b863c838537fa0ebf8d226175d2a1fc7a",
+        "model_config_hash": "f7ed32cf93378bcf3d37a8f6f3173012766dae0d78cf1e0a84e2eb5e049333e9",
+        "status": "passed",
+        "task_success": true,
+        "sop_compliance": null,
+        "sop_rules": {
+          "eligibility_before_refund": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "tool_proposed_count": 1,
+        "tool_executed_count": 1,
+        "tool_success_count": 0,
+        "tool_rejected_count": 1,
+        "tool_error_count": 0,
+        "tool_execution_error_count": 0,
+        "tool_protocol_error_count": 0,
+        "tool_paused_count": 0,
+        "tool_reentry_count": 0,
+        "model_calls": 2,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "known_input_tokens": 0,
+        "unknown_input_tokens_calls": 2,
+        "usage_source": "offline",
+        "failure_reason": null,
+        "termination_reason": "completed"
+      }
+    ]
+  },
+  "mock_usage": {
+    "provider": "deepseek",
+    "transport": "httpx.MockTransport",
+    "real_api": false,
+    "requests": [
+      {
+        "input_tokens": 100,
+        "output_tokens": 10,
+        "total_tokens": 110,
+        "prompt_cache_hit_tokens": 70,
+        "prompt_cache_miss_tokens": 30
+      },
+      {
+        "input_tokens": 100,
+        "output_tokens": 10,
+        "total_tokens": 110,
+        "prompt_cache_hit_tokens": 70,
+        "prompt_cache_miss_tokens": 30
+      },
+      {
+        "input_tokens": 100,
+        "output_tokens": 10,
+        "total_tokens": 110,
+        "prompt_cache_hit_tokens": 70,
+        "prompt_cache_miss_tokens": 30
+      }
+    ],
+    "result": {
+      "case_id": "refund_small",
+      "variant": "B0-compatible",
+      "repeat": 1,
+      "git_sha": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+      "source_hash": "4a9590331a6e796739a8105d960ab539aa8d8bbf804621177ddf44df8cb13a15",
+      "working_tree_dirty": false,
+      "dataset_hash": "8091e2f44e153229d45735de1020a78cc766ce883e61d20a13ddfcfc6499ef0a",
+      "model_config_hash": "5c9cc3a30dac9f9c9d730a093ca4ca8063a549c5f053baa44789b8a5229ed757",
+      "status": "passed",
+      "task_success": true,
+      "sop_compliance": true,
+      "sop_rules": {
+        "eligibility_before_refund": {
+          "applicable": 1,
+          "passed": 1
+        }
+      },
+      "tool_proposed_count": 2,
+      "tool_executed_count": 2,
+      "tool_success_count": 2,
+      "tool_rejected_count": 0,
+      "tool_error_count": 0,
+      "tool_execution_error_count": 0,
+      "tool_protocol_error_count": 0,
+      "tool_paused_count": 0,
+      "tool_reentry_count": 0,
+      "model_calls": 3,
+      "input_tokens": 300,
+      "output_tokens": 30,
+      "total_tokens": 330,
+      "known_input_tokens": 300,
+      "unknown_input_tokens_calls": 0,
+      "usage_source": "mock",
+      "failure_reason": null,
+      "termination_reason": "completed"
+    }
+  },
+  "trace_sample": "artifacts/stage_1_trace_sample.json",
+  "push": {
+    "status": "not_pushed",
+    "reason": "GitHub HTTPS credentials unavailable at preflight"
+  }
+}

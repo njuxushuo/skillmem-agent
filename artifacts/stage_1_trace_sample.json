@@ -1,0 +1,349 @@
+{
+  "kind": "redacted_event_projection",
+  "source": "offline rule model; synthetic fixtures only",
+  "code_commit": "487d533fea6148e70cc1fd8d2ec2230f69097915",
+  "notes": "All event steps retained; full message bodies and unrelated orders omitted. IDs consistently aliased. No real API.",
+  "events": [
+    {
+      "step": 1,
+      "event": "task.start",
+      "active_skill": null,
+      "case_id": "refund_approved",
+      "initial_refunds": 0,
+      "initial_refunded": "0"
+    },
+    {
+      "step": 2,
+      "event": "action.user",
+      "active_skill": null,
+      "content": "Refund order ORDER-A, damaged"
+    },
+    {
+      "step": 3,
+      "event": "model.request",
+      "active_skill": null,
+      "call_id": "id-1",
+      "message_roles": [
+        [
+          "system",
+          "human"
+        ]
+      ]
+    },
+    {
+      "step": 4,
+      "event": "model.response",
+      "active_skill": null,
+      "latency_ms": 0.2454705536365509,
+      "usage_source": "offline",
+      "call_id": "id-1",
+      "usage": {
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "raw": null,
+        "normalized": {}
+      },
+      "assistant_content": "",
+      "tool_call_ids": [
+        "id-2"
+      ]
+    },
+    {
+      "step": 5,
+      "event": "tool.proposed",
+      "active_skill": null,
+      "tool_name": "check_refund_eligibility",
+      "protocol_valid": true,
+      "tool_call_id": "id-2",
+      "args": {
+        "order_id": "ORDER-A"
+      }
+    },
+    {
+      "step": 6,
+      "event": "tool.attempt",
+      "active_skill": null,
+      "tool_name": "check_refund_eligibility",
+      "tool_call_id": "id-2",
+      "invocation_id": "id-3"
+    },
+    {
+      "step": 7,
+      "event": "tool.execution_start",
+      "active_skill": null,
+      "tool_name": "check_refund_eligibility",
+      "tool_call_id": "id-2",
+      "invocation_id": "id-3"
+    },
+    {
+      "step": 8,
+      "event": "tool.execution_end",
+      "active_skill": null,
+      "tool_name": "check_refund_eligibility",
+      "outcome": "success",
+      "tool_call_id": "id-2",
+      "invocation_id": "id-3",
+      "result": {
+        "order_id": "ORDER-A",
+        "item": "Aero commuter helmet",
+        "eligible": true,
+        "reason": "Delivered 11 days ago, within the 30-day window.",
+        "max_amount": "89.00",
+        "currency": "EUR",
+        "needs_human_approval": true
+      }
+    },
+    {
+      "step": 9,
+      "event": "tool.return",
+      "active_skill": null,
+      "latency_ms": 1.0836012661457062,
+      "tool_call_id": "id-2",
+      "invocation_id": "id-3"
+    },
+    {
+      "step": 10,
+      "event": "tool.observation",
+      "active_skill": null,
+      "tool_name": "check_refund_eligibility",
+      "status": "success",
+      "tool_call_id": "id-2",
+      "result": {
+        "order_id": "ORDER-A",
+        "item": "Aero commuter helmet",
+        "eligible": true,
+        "reason": "Delivered 11 days ago, within the 30-day window.",
+        "max_amount": "89.00",
+        "currency": "EUR",
+        "needs_human_approval": true
+      }
+    },
+    {
+      "step": 11,
+      "event": "model.request",
+      "active_skill": null,
+      "call_id": "id-4",
+      "message_roles": [
+        [
+          "system",
+          "human",
+          "ai",
+          "tool"
+        ]
+      ]
+    },
+    {
+      "step": 12,
+      "event": "model.response",
+      "active_skill": null,
+      "latency_ms": 0.4321746528148651,
+      "usage_source": "offline",
+      "call_id": "id-4",
+      "usage": {
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "raw": null,
+        "normalized": {}
+      },
+      "assistant_content": "",
+      "tool_call_ids": [
+        "id-5"
+      ]
+    },
+    {
+      "step": 13,
+      "event": "tool.proposed",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "protocol_valid": true,
+      "tool_call_id": "id-5",
+      "args": {
+        "order_id": "ORDER-A",
+        "amount": 89.0,
+        "reason": "Refund order ORDER-A, damaged"
+      }
+    },
+    {
+      "step": 14,
+      "event": "tool.attempt",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "tool_call_id": "id-5",
+      "invocation_id": "id-6"
+    },
+    {
+      "step": 15,
+      "event": "tool.execution_start",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "tool_call_id": "id-5",
+      "invocation_id": "id-6"
+    },
+    {
+      "step": 16,
+      "event": "tool.paused",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "tool_call_id": "id-5",
+      "invocation_id": "id-6"
+    },
+    {
+      "step": 17,
+      "event": "tool.interrupt",
+      "active_skill": null,
+      "latency_ms": 1.173950731754303,
+      "error": "GraphInterrupt",
+      "invocation_id": "id-6"
+    },
+    {
+      "step": 18,
+      "event": "action.result",
+      "active_skill": null,
+      "status": "awaiting_approval",
+      "reply": "I've asked a colleague to approve a refund of 89.00 EUR for order ORDER-A. You'll get an answer here shortly.",
+      "refund_count": 0
+    },
+    {
+      "step": 19,
+      "event": "graph.interrupt",
+      "active_skill": null,
+      "details": {
+        "type": "refund_approval",
+        "customer_id": "CUSTOMER-A",
+        "order_id": "ORDER-A",
+        "item": "Aero commuter helmet",
+        "amount": "89.00",
+        "currency": "EUR",
+        "reason": "Refund order ORDER-A, damaged"
+      }
+    },
+    {
+      "step": 20,
+      "event": "graph.resume",
+      "active_skill": null,
+      "decision": {
+        "approved": true,
+        "reviewer": "REVIEWER-A",
+        "note": null
+      }
+    },
+    {
+      "step": 21,
+      "event": "tool.attempt",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "tool_call_id": "id-5",
+      "invocation_id": "id-7"
+    },
+    {
+      "step": 22,
+      "event": "tool.execution_start",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "tool_call_id": "id-5",
+      "invocation_id": "id-7"
+    },
+    {
+      "step": 23,
+      "event": "tool.execution_end",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "outcome": "success",
+      "tool_call_id": "id-5",
+      "invocation_id": "id-7",
+      "result": {
+        "status": "refunded",
+        "refund_id": "R-0001",
+        "order_id": "ORDER-A",
+        "amount": "89.00",
+        "currency": "EUR",
+        "approved_by": "REVIEWER-A",
+        "arrives": "within 5 working days"
+      }
+    },
+    {
+      "step": 24,
+      "event": "tool.return",
+      "active_skill": null,
+      "latency_ms": 1.1956393718719482,
+      "tool_call_id": "id-5",
+      "invocation_id": "id-7"
+    },
+    {
+      "step": 25,
+      "event": "tool.observation",
+      "active_skill": null,
+      "tool_name": "request_refund",
+      "status": "success",
+      "tool_call_id": "id-5",
+      "result": {
+        "status": "refunded",
+        "refund_id": "R-0001",
+        "order_id": "ORDER-A",
+        "amount": "89.00",
+        "currency": "EUR",
+        "approved_by": "REVIEWER-A",
+        "arrives": "within 5 working days"
+      }
+    },
+    {
+      "step": 26,
+      "event": "model.request",
+      "active_skill": null,
+      "call_id": "id-8",
+      "message_roles": [
+        [
+          "system",
+          "human",
+          "ai",
+          "tool",
+          "ai",
+          "tool"
+        ]
+      ]
+    },
+    {
+      "step": 27,
+      "event": "model.response",
+      "active_skill": null,
+      "latency_ms": 0.41446834802627563,
+      "usage_source": "offline",
+      "call_id": "id-8",
+      "usage": {
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "raw": null,
+        "normalized": {}
+      },
+      "assistant_content": "Done: I've refunded 89.00 EUR for order ORDER-A (refund R-0001). It will arrive within 5 working days.",
+      "tool_call_ids": []
+    },
+    {
+      "step": 28,
+      "event": "action.result",
+      "active_skill": null,
+      "status": "answered",
+      "reply": "Done: I've refunded 89.00 EUR for order ORDER-A (refund R-0001). It will arrive within 5 working days.",
+      "refund_count": 1
+    },
+    {
+      "step": 29,
+      "event": "task.state",
+      "active_skill": null,
+      "refunded_before": "0",
+      "refunded_after": "89.00",
+      "refunds_created": 1,
+      "pending": []
+    },
+    {
+      "step": 30,
+      "event": "task.end",
+      "active_skill": null,
+      "stop_reason": "completed",
+      "task_success": true
+    }
+  ]
+}

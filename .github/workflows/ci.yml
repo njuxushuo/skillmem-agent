@@ -32,7 +32,9 @@ jobs:
           python -m pip check
           ruff check src tests scripts
           ruff format --check src tests scripts
-      - name: Original tests, with network disabled
+      - name: Original and Stage 1 tests, with network disabled
         run: python scripts/run_offline.py pytest -q --cov=support_agent --cov-report=term-missing
       - name: Original 11 scenarios, with network disabled
         run: python scripts/run_offline.py scenarios
+      - name: Stage 1 task runner, with network disabled
+        run: python scripts/run_offline.py tasks

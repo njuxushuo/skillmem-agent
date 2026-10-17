@@ -23,6 +23,7 @@ from support_agent.policies_kb import PolicyBase
 from support_agent.policy import PolicyConfig
 from support_agent.store import Store
 from support_agent.tools import make_tools
+from support_agent.tracing import TraceRecorder
 
 MAX_STEPS_PER_TURN = 16  # model + tool steps; stops a confused model from looping forever
 
@@ -114,12 +115,17 @@ class SupportService:
         policy: PolicyConfig | None = None,
         data_dir: Path | None = None,
         db_path: str | None = None,
+        trace: TraceRecorder | None = None,
     ) -> None:
         """db_path: SQLite file for conversations, checkpoints and pending approvals. None keeps them in memory."""
         data_dir = data_dir or default_data_dir()
         self.store = store or Store.load(data_dir / "store.json")
         self.policy = policy or PolicyConfig()
         tools = make_tools(self.store, PolicyBase(data_dir / "policies.md"), self.policy)
+
+        self.trace = trace
+        if trace is not None:
+            tools = trace.instrument_tools(tools)
 
         connection = sqlite3.connect(db_path or ":memory:", check_same_thread=False)
         checkpointer: BaseCheckpointSaver = SqliteSaver(connection) if db_path else InMemorySaver()
@@ -171,6 +177,8 @@ class SupportService:
 
     def _run(self, graph_input, customer_id: str, thread_id: str) -> ChatResult:
         config = self._config(customer_id, thread_id)
+        if self.trace is not None:
+            config["callbacks"] = [self.trace]
         before = len(self.graph.get_state(config).values.get("messages", []))
         try:
             self.graph.invoke(graph_input, config)

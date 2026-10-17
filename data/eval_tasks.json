@@ -1,0 +1,179 @@
+[
+  {
+    "case_id": "shipping_multi_turn",
+    "category": "query",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Show me order 1005"
+      },
+      {
+        "role": "user",
+        "content": "Where is my order 1002?"
+      }
+    ],
+    "approval_script": [],
+    "expected": {
+      "kind": "query",
+      "order_id": "1002",
+      "facts": [
+        "tracking",
+        "eta"
+      ]
+    }
+  },
+  {
+    "case_id": "order_details",
+    "category": "query",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Show me order 1005"
+      }
+    ],
+    "approval_script": [],
+    "expected": {
+      "kind": "query",
+      "order_id": "1005",
+      "facts": [
+        "item",
+        "total",
+        "currency",
+        "status"
+      ]
+    }
+  },
+  {
+    "case_id": "refund_small",
+    "category": "refund",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Refund order 1005, it arrived broken"
+      }
+    ],
+    "approval_script": [],
+    "expected": {
+      "kind": "refund",
+      "order_id": "1005",
+      "amount": "18.00",
+      "approved_by": "policy",
+      "reply_contains": [
+        "18.00",
+        "EUR",
+        "1005"
+      ]
+    }
+  },
+  {
+    "case_id": "refund_approved",
+    "category": "refund",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Refund order 1001, damaged"
+      }
+    ],
+    "approval_script": [
+      {
+        "approved": true,
+        "reviewer": "fixture-reviewer"
+      }
+    ],
+    "expected": {
+      "kind": "refund",
+      "order_id": "1001",
+      "amount": "89.00",
+      "approved_by": "fixture-reviewer",
+      "requires_approval": true,
+      "reply_contains": [
+        "89.00",
+        "EUR",
+        "1001"
+      ]
+    }
+  },
+  {
+    "case_id": "refund_denied",
+    "category": "refusal",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Refund order 1001, damaged"
+      }
+    ],
+    "approval_script": [
+      {
+        "approved": false,
+        "reviewer": "fixture-reviewer",
+        "note": "not approved by reviewer"
+      }
+    ],
+    "expected": {
+      "kind": "refusal",
+      "order_id": "1001",
+      "reply_contains": [
+        "not approved by reviewer"
+      ]
+    }
+  },
+  {
+    "case_id": "cancel_processing",
+    "category": "cancel",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Cancel order 1004"
+      }
+    ],
+    "approval_script": [],
+    "expected": {
+      "kind": "cancel",
+      "order_id": "1004",
+      "reply_contains": [
+        "1004",
+        "cancelled"
+      ]
+    }
+  },
+  {
+    "case_id": "cancel_shipped_refused",
+    "category": "refusal",
+    "customer_id": "C100",
+    "fixture": "store.json",
+    "clock": "2025-10-01",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Cancel order 1002"
+      }
+    ],
+    "approval_script": [],
+    "expected": {
+      "kind": "refusal",
+      "order_id": "1002",
+      "reply_contains": [
+        "can't be cancelled",
+        "shipped"
+      ]
+    }
+  }
+]

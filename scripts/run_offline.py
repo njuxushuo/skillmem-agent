@@ -1,7 +1,8 @@
-"""Run unchanged upstream checks with credentials removed and sockets blocked.
+"""Run offline regression and evaluation checks with credentials removed and sockets blocked.
 
 Usage: python scripts/run_offline.py pytest -q
        python scripts/run_offline.py scenarios
+       python scripts/run_offline.py tasks
 This is a verification harness, not an Agent evaluator or runtime component.
 """
 
@@ -32,11 +33,11 @@ def configure_offline() -> None:
 
 
 def main() -> None:
-    """Dispatch only the original pytest suite or scenario module."""
-    if len(sys.argv) < 2 or sys.argv[1] not in {"pytest", "scenarios"}:
-        raise SystemExit("Usage: run_offline.py {pytest [pytest args...]|scenarios}")
+    """Dispatch pytest, original scenarios or Stage 1 tasks; force offline provider."""
+    if len(sys.argv) < 2 or sys.argv[1] not in {"pytest", "scenarios", "tasks"}:
+        raise SystemExit("Usage: run_offline.py {pytest [pytest args...]|scenarios|tasks}")
     command, args = sys.argv[1], sys.argv[2:]
-    if command == "scenarios" and args:
+    if command in {"scenarios", "tasks"} and args:
         raise SystemExit("The offline scenario command takes no provider arguments")
     root = Path(__file__).resolve().parents[1]
     os.chdir(root)
@@ -47,6 +48,8 @@ def main() -> None:
         runpy.run_module("pytest", run_name="__main__")
     else:
         sys.argv = ["support_agent.evaluate", "--provider", "offline"]
+        if command == "tasks":
+            sys.argv += ["--tasks", "data/eval_tasks.json"]
         runpy.run_module("support_agent.evaluate", run_name="__main__")
 
 

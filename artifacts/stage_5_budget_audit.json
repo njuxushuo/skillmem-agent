@@ -1,0 +1,27 @@
+{
+  "scope": "Stage5 new calls including Pilot and Final; excludes Stage1 historical smoke",
+  "http_attempts": 1327,
+  "http_200": 1327,
+  "input_tokens": 2350086,
+  "output_tokens": 78941,
+  "total_tokens": 2429027,
+  "cache_hit_tokens": 1148999,
+  "cache_miss_tokens": 1201087,
+  "cache_partition_valid": true,
+  "cost_all_miss_peak_upper_usd": "0.7997550",
+  "cache_aware_peak_price_estimate_usd": "0.461949294",
+  "actual_billed_usd": null,
+  "limits": {
+    "requests": 2000,
+    "usd": "3.00",
+    "per_request_usd": "0.3158016",
+    "context_limit": 1048576,
+    "output_limit": 1024,
+    "input_rate": "0.30",
+    "output_rate": "1.20",
+    "pricing_url": "https://api-docs.deepseek.com/quick_start/pricing",
+    "pricing_verified_on": "2026-10-17"
+  },
+  "stopped": null,
+  "raw_ledger_sha256": "7198a8e782214f5b1dee4a887b2cd959e0daacca59193506d3d89438cd642173"
+}

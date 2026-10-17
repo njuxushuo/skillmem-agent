@@ -421,3 +421,24 @@ MS复用M和B1执行层，新增`skills.py`与`data/skills/{order_shipping,refun
 `select_skill`是同一模型的控制工具，输出匹配ToolMessage并更新active_skill；不创建第二Router模型，不改订单业务权限。审批期间冻结；完整checkpoint确认终态后同次恢复中可继续切换。旧B1/M待审批迁入MS时，只为精确匹配可信审批消息/调用/订单的原退款恢复refund Skill，单独记录skill.restored，不伪造模型路由。
 
 B1/M的full_sop显式对照注入与MS相同的四份SOP，并说明所有业务工具已开放、不执行选择指令；默认不变。MS拒绝full_sop。Tracing分开记录业务入口、控制入口、切换、所有模型usage与路由响应usage子集；格式错误但能识别select_skill的响应也计路由成本，缺usage不补零。离线规则模型只增加绑定select时的协议演示，不是Skill效果评测。
+
+## 13. Stage 5 最终实际目录与依赖审计
+
+前文为批准的设计契约，Stage0–4段落为历史状态。当前19个应用Python文件/4056物理行，唯一包仍为support_agent。Stage5仅扩展evaluation.py（相对Stage4净+485行），不改变graph/service/tools/policy/memory/context/skills运行行为。没有新增规划器或第二业务Agent。evaluation.py现因输入schema、oracle、夹具与runner集中过大，后续可按经审查的独立任务拆分，但本次不为行数增设管理层。
+
+```text
+src/support_agent/  原业务 + tracing/execution + state/memory/context/skills/evaluation
+data/              原store/policies/scenarios/eval_tasks均保留
+  skills/          四份SOP
+  benchmark_dev.json / benchmark_final.json / benchmark_manifest.json
+tests/             19个Python文件；564项pytest，含原24项
+scripts/           run_offline.py / run_live_smoke.py / run_benchmark.py
+docs/              implementation_plan/architecture/evaluation_protocol/limitations/upstream_README
+  reports/         phase_0–5、phase_1_live_smoke、final_review、interview_technical_guide
+artifacts/         各阶段摘要、results.csv/summary.json、Stage5预算/5轨迹/判分审计
+.local/            忽略：原始轨迹/数据库/账本/证据；.env同样忽略
+```
+
+评测schema与通用Oracle只在evaluation.py，不复制进脚本；受限批次、冻结、调度和公开统计在scripts/run_benchmark.py，复用Stage1 BudgetLedger/BoundedTransport。基线/优化共享同一runner与业务层。评测使用4线程运行独立case；fixture构造器短临界区以RLock隔离，执行仍是每会话一个Agent。不用于同进程并发构造无此锁的外部应用Service。
+
+依赖方向保持：memory/context/skills不反向调用service/graph；graph组装节点，service持有审批和会话，evaluation调用service。新增4个Stage5测试文件与两个数据集均有真实用途；原7开发任务保留以保证历史可复现，Final另命名是对目标目录的有意扩展。原data包外安装限制仍存在，要求editable源码环境。G5结果与Oracle已知语义误拒见phase_5与limitations。

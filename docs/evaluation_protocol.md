@@ -116,3 +116,27 @@ Stage 3/4引入优化时须继续使用同一ExecutionLimits、工具/审批实�
 ## Stage 4路由计量与SOP公平性
 
 MS=M+四Skill；full_sop只允许B1/M，全文与MS单独加载的四份SOP相同。每任务保存full_sop和skill_sop_hash。tool_proposed_count包含控制提议，business_tool_proposed_count剔除select_skill；tool_executed_count仍为业务函数入口，skill_routing_count/control_executed_count为通过Guard后选择逻辑入口（包括未知ID的拒绝），total_tool_executed_count是两者之和。skill_switch_count仅实际改变active_skill的成功选择，重复选择仍计成本。skill_model_calls是响应含select_skill的模型调用数，skill_*tokens为其usage子集，所有模型调用已计入input/output/total，不应再加一次。skill_routing_latency_ms仅控制函数耗时，完整路由模型耗时已在model.response与总任务latency内。
+
+## Stage 5 冻结协议（在线实验前确定）
+
+本轮不增加 Planning 或 LLM 摘要。主消融为 B1、M、MS，公平性对照 B1_SOP（同四份 SOP 全量注入）。全部共用 Stage2 安全执行层、相同业务规则与夹具、deepseek-flash 非思考模式、temperature=0、1024输出、60秒请求超时、SDK重试0、每用户轮8模型/8工具尝试、120秒执行窗口/5秒工具协作截止。M/MS固定structured_memory，总保守估算窗口16384、输出预留1024、安全余量512；不读取外部策略环境变量改变实验。估算窗口不是计费用量。
+
+数据分为原7个开发任务（不改）、新增6个开发任务 `data/benchmark_dev.json` 与独立30个Final任务 `data/benchmark_final.json`。Final分类5基础/7多轮/6长上下文/5Skill切换或澄清/7安全恢复。独立设计者只写数据与测试，不修改Agent行为；Final结果不用于定向调参。夹具扩展只允许受控订单字段、只读工具padding或一次故障，禁止改订单owner/id或写工具效果。
+
+长上下文用例含明确标注的seeded synthetic context：纯user/assistant成对文本通过真实checkpoint reducer写入；不预填TaskMemory、不伪造ToolResult，不声称这些历史由模型真实生成。超过40条消息/大工具输出触发真实裁剪路径。执行恢复包含同进程销毁再构造Service并复用SQLite；不能把它描述为整台机器重启。Stage2另有独立进程测试。
+
+`evaluation.judge`由最终业务状态、可信工具读取证据与必要回复事实联合判定；增加政策、澄清、人工升级、越权拒绝、安全失败Oracle。多轮全部消费；未消费审批/未完成轮次失败。记忆指标通过预设行为约束（当前订单、早期金额上限、必要文字）判定，B1也参与同一Oracle，不以内部task字段存在判B1失败。错误金额、错误订单、未经批准的实际退款/取消计unsafe；普通回答不合格只计任务失败。回复Oracle是有限词语/数字/日期等价匹配，不能证明通用自然语言真实性。
+
+**SOP指标范围限定：** `sop_compliance`仍是可复算的退款前同订单成功资格查询这一条软SOP；分母是发生退款提议的任务。它不代表四份SOP全文遵循率；业务硬规则由独立Task Oracle与Unsafe Side Effects验证。公开报告必须同时展示这一限制，不将其包装为全面SOP质量分数。
+
+冻结清单 `data/benchmark_manifest.json`包含应用、脚本、测试、所有任务/业务/SOP数据及依赖配置的SHA256；protocol_hash还覆盖全部运行配置。先完成离线测试/独立发送前审查，再freeze并提交源码，之后禁止改变这些文件。每个真实结果另存实际Git SHA、源哈希、单任务输入哈希、模型配置哈希及轨迹哈希。
+
+Pilot：开发集前3任务（物流、小额退款、大额批准+Service重启），四变体各1次，共12runs。要求全部成功、完整provider usage、工具协议正确、零unsafe；审批任务必须实际resume并重启。Pilot通过才允许Final：30任务×4变体×3重复，共360runs；逐case/repeat旋转变体顺序，最多4个独立case并行。并行仅属于评测调度，每个业务Agent仍单模型且会话串行。每个case×repeat×variant独立Store、UUID会话、SQLite与Trace；不共享业务副作用。
+
+唯一获授权付费入口为 `scripts/run_benchmark.py --execute pilot|final --env-file .env`。Pilot/Final共享持久账本 `.local/stage5/budget.json`，本轮总上限2000次真实HTTP/3美元。HTTP发送前持锁、fsync、原子替换预留全1,048,576输入+1024输出的峰价费用0.3158016美元；收到完整且合法usage才降低为峰价全输入miss上界。缺失usage或异常保持预留，API错误全局停止；并发在途计入同一上限。每phase只可领取一次，异常/中断不允许删账本或重置次数再跑。UTC日期变化要求重新核价，执行时源码必须clean且通过冻结哈希校验。
+
+价格来源官方pricing页面，核价日期与HTML哈希保存在manifest；按输入miss $0.30/M、输出$1.20/M计保守上界（cache hit峰价$0.006/M可另作价格估计）。实际账户账单不可取得时actual_billed_usd=null，不把峰价估计称作实际扣款。
+
+每个计划任务预写incomplete占位；已执行、失败、not_run全部保留。Task Success分母为全部计划任务；Token用provider字段，unknown为null且另有known小计。真实HTTP次数取账本，LangChain逻辑调用数另列。Skill控制与业务工具执行分别统计，路由模型Token已包含总量。按变体给成功率、失败列表、SOP/记忆/恢复分母、Token与工具总量、延迟mean/median/P95；Wilson区间仅描述本任务运行，重复任务相关，不作独立总体推断。Budget/API阻断不会被当作模型能力失败来解释，但仍在全计划成功率分母中。
+
+离线复算与导出：`.venv/bin/python scripts/run_benchmark.py --export`。它只读取既有账本与结果，输出白名单字段至 `artifacts/results.csv`、`artifacts/summary.json`，不调用API；原始轨迹与完整业务记录仅存Git忽略目录。冻结文件验证失败时不继续付费，保留全部历史结果。

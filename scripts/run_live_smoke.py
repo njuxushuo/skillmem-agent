@@ -13,6 +13,7 @@ import json
 import os
 import threading
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -50,12 +51,28 @@ class BudgetStopped(RuntimeError):
 class BudgetLedger:
     """Reserve before sending; fsync/rename and flock preserve reservations across crashes."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, limits: dict | None = None) -> None:
+        self.limits = deepcopy(LIMITS if limits is None else limits)
+        self.reservation = (
+            self.limits["context_limit"] * Decimal(self.limits["input_rate"])
+            + self.limits["output_limit"] * Decimal(self.limits["output_rate"])
+        ) / 1_000_000
+        if (
+            type(self.limits["requests"]) is not int
+            or not 0 < self.limits["requests"] <= 2000
+            or not Decimal("0") < Decimal(self.limits["usd"]) <= Decimal("3")
+            or self.limits["context_limit"] < CONTEXT_LIMIT
+            or not 0 < self.limits["output_limit"] <= OUTPUT_LIMIT
+            or Decimal(self.limits["input_rate"]) < INPUT_RATE
+            or Decimal(self.limits["output_rate"]) < OUTPUT_RATE
+            or Decimal(self.limits["per_request_usd"]) != self.reservation
+        ):
+            raise ValueError("unsafe_budget_configuration")
         self.path = path
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self._lock = threading.Lock()
         with self.edit() as state:
-            if state["limits"] != LIMITS:
+            if state["limits"] != self.limits:
                 raise BudgetStopped("ledger_limits_changed")
 
     @contextmanager
@@ -65,7 +82,7 @@ class BudgetLedger:
             state = (
                 json.loads(self.path.read_text())
                 if self.path.exists()
-                else {"limits": LIMITS, "attempts": [], "stopped": None, "claimed": False}
+                else {"limits": self.limits, "attempts": [], "stopped": None, "claimed": False}
             )
             yield state
             temp = self.path.with_suffix(".tmp")
@@ -89,7 +106,11 @@ class BudgetLedger:
     def reserve(self, payload: bytes) -> int:
         with self.edit() as state:
             committed = sum(Decimal(a["upper_usd"]) for a in state["attempts"])
-            if state["stopped"] or len(state["attempts"]) >= REQUEST_LIMIT or committed + RESERVATION > USD_LIMIT:
+            if (
+                state["stopped"]
+                or len(state["attempts"]) >= self.limits["requests"]
+                or committed + self.reservation > Decimal(self.limits["usd"])
+            ):
                 raise BudgetStopped("request_or_cost_limit_reached")
             index = len(state["attempts"])
             state["attempts"].append(
@@ -97,7 +118,7 @@ class BudgetLedger:
                     "number": index + 1,
                     "started_at": datetime.now(UTC).isoformat(),
                     "payload_sha256": hashlib.sha256(payload).hexdigest(),
-                    "upper_usd": str(RESERVATION),
+                    "upper_usd": str(self.reservation),
                     "status": "reserved",
                     "usage": None,
                 }
@@ -124,8 +145,15 @@ class BudgetLedger:
             )
             if all(type(v) is int and v >= 0 for v in values):
                 prompt, completion, total = values
-                if prompt <= CONTEXT_LIMIT and completion <= OUTPUT_LIMIT and total == prompt + completion:
-                    row["upper_usd"] = str((prompt * INPUT_RATE + completion * OUTPUT_RATE) / 1_000_000)
+                if (
+                    prompt <= self.limits["context_limit"]
+                    and completion <= self.limits["output_limit"]
+                    and total == prompt + completion
+                ):
+                    row["upper_usd"] = str(
+                        (prompt * Decimal(self.limits["input_rate"]) + completion * Decimal(self.limits["output_rate"]))
+                        / 1_000_000
+                    )
                     row["usage_complete"] = True
                 else:
                     state["stopped"] = "usage_contract_violation"
@@ -156,7 +184,7 @@ class BoundedTransport(httpx.BaseTransport):
             or payload.get("thinking") != {"type": "disabled"}
             or payload.get("stream") is not False
             or type(payload.get("max_tokens")) is not int
-            or not 0 < payload["max_tokens"] <= OUTPUT_LIMIT
+            or not 0 < payload["max_tokens"] <= self.ledger.limits["output_limit"]
             or payload.get("n", 1) != 1
             or "max_completion_tokens" in payload
             or any(t.get("type") != "function" for t in payload.get("tools", []))

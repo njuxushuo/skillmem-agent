@@ -149,8 +149,16 @@ class TraceRecorder(BaseCallbackHandler):
             )
 
     def on_llm_error(self, error, *, run_id, **kwargs):
+        category = "api_error"
+        cause, seen = error, set()
+        while cause is not None and id(cause) not in seen:
+            seen.add(id(cause))
+            category = getattr(cause, "failure_category", category)
+            cause = cause.__cause__
         self.emit(
             "model.error",
+            failure_category=category,
+            http_status=getattr(error, "status_code", None),
             call_id=str(run_id),
             error=type(error).__name__,
             detail=str(error),
@@ -248,6 +256,8 @@ class TraceRecorder(BaseCallbackHandler):
         requests = count("model.request")
         stats = {
             "model_calls": requests,
+            "model_response_count": len(responses),
+            "model_error_count": count("model.error"),
             "tool_proposed_count": count("tool.proposed"),
             "tool_executed_count": count("tool.execution_start"),
             "tool_success_count": sum(

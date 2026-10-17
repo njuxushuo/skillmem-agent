@@ -248,3 +248,34 @@ def test_trace_sink_failure_invalidates_measurement(cases, tmp_path, monkeypatch
     row = report["results"][0]
     assert not row["task_success"] and row["failure_reason"] == "trace_write_error"
     assert row["tool_executed_count"] == 2  # observation failure does not retry the refund
+
+
+@pytest.mark.parametrize("payload", ["not-json", "[]", "null", "true", "{}", None])
+def test_sop_invalid_result_is_not_evidence(payload):
+    observed = {"event": "tool.execution_end", "tool_name": "check_refund_eligibility", "result": payload}
+    proposal = {"event": "tool.proposed", "tool_name": "request_refund", "args": {"order_id": "1005"}}
+    result = sop_checks([observed, proposal])
+    assert result["sop_compliance"] is False
+    assert result["sop_invalid_result_count"] == 1
+
+
+@pytest.mark.parametrize(
+    "counts,expected",
+    [
+        ([(0, 0, 0)], "not_run"),
+        ([(1, 0, 1)], "failed"),
+        ([(2, 1, 1)], "partial_failure"),
+        ([(1, 1, 0), (0, 0, 0)], "partial_failure"),
+        ([(2, 2, 0)], "api_succeeded"),
+    ],
+)
+def test_real_api_status_requires_responses(counts, expected):
+    from support_agent.evaluation import deepseek_api_status
+
+    results = [
+        dict(model_calls=calls, model_response_count=responses, model_error_count=errors)
+        for calls, responses, errors in counts
+    ]
+    assert deepseek_api_status(results, "deepseek", "provider") == expected
+    assert deepseek_api_status(results, "deepseek", "mock") == "not_run"
+    assert deepseek_api_status(results, "offline", "offline") == "not_run"

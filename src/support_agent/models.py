@@ -14,7 +14,8 @@ from langchain_core.language_models import BaseChatModel
 from support_agent.offline_model import OfflineSupportModel
 
 
-def get_model(provider: str | None = None) -> BaseChatModel:
+def get_model(provider: str | None = None, *, http_client=None) -> BaseChatModel:
+    """Construct a provider; an optional DeepSeek HTTP client enables bounded smoke tests."""
     provider = (provider or os.getenv("SUPPORT_MODEL_PROVIDER", "offline")).lower()
 
     if provider == "offline":
@@ -50,6 +51,7 @@ def get_model(provider: str | None = None) -> BaseChatModel:
             extra_body={"thinking": {"type": "disabled"}},
             use_responses_api=False,
             streaming=False,
+            **({"http_client": http_client} if http_client is not None else {}),
         )
     if provider == "openai":
         return ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)

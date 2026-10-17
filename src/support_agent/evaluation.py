@@ -132,17 +132,56 @@ def sop_checks(events: list[dict]) -> dict:
     """One measured soft SOP: successful eligibility check before each refund proposal."""
     eligible = set()
     checks = []
+    invalid_results = 0
     for event in events:
         if event["event"] == "tool.execution_end" and event["tool_name"] == "check_refund_eligibility":
-            result = json.loads(event["result"])
-            if result.get("eligible"):
+            try:
+                result = json.loads(event["result"])
+            except (TypeError, ValueError):
+                result = None
+            if not isinstance(result, dict) or not isinstance(result.get("order_id"), str):
+                invalid_results += 1
+                continue
+            if result.get("eligible") is True:
                 eligible.add(result["order_id"])
         if event["event"] == "tool.proposed" and event["tool_name"] == "request_refund":
             checks.append(isinstance(event["args"], dict) and event["args"].get("order_id") in eligible)
     return {
         "sop_compliance": all(checks) if checks else None,
+        "sop_invalid_result_count": invalid_results,
         "sop_rules": {"eligibility_before_refund": {"applicable": len(checks), "passed": sum(checks)}},
     }
+
+
+def deepseek_api_status(results: list[dict], provider: str, source: str) -> str:
+    """API responses are evidence, not a provider label; independent of business success."""
+    if provider != "deepseek" or source != "provider" or not any(r["model_calls"] for r in results):
+        return "not_run"
+    responses = sum(r["model_response_count"] for r in results)
+    if not responses:
+        return "failed"
+    if any(
+        r["model_error_count"] or r["model_calls"] != r["model_response_count"] or not r["model_calls"] for r in results
+    ):
+        return "partial_failure"
+    return "api_succeeded"
+
+
+def failure_category(result: dict, events: list[dict]) -> str | None:
+    if result["task_success"]:
+        return None
+    errors = [e for e in events if e["event"] == "model.error"]
+    if errors:
+        return errors[-1].get("failure_category", "api_error")
+    if not result["model_calls"]:
+        return "setup_error"
+    if (
+        result["termination_reason"] == "GraphRecursionError"
+        or result["tool_protocol_error_count"]
+        or any(e["event"] == "tool.proposed" and not e.get("protocol_valid", True) for e in events)
+    ):
+        return "model_decision_failure"
+    return "oracle_failure"
 
 
 def digest(value) -> str:
@@ -314,12 +353,23 @@ def run_cases(
                 trace.emit("task.error", error=type(exc).__name__, detail=str(exc))
             result.update(trace.statistics())
             result.update(sop_checks(trace.events))
+            result["failure_category"] = failure_category(result, trace.events)
             result["latency_ms"] = (perf_counter() - start) * 1000
             if trace.write_errors:
-                result.update(status="error", task_success=False, failure_reason="trace_write_error")
+                result.update(
+                    status="error",
+                    task_success=False,
+                    failure_reason="trace_write_error",
+                    failure_category="measurement_error",
+                )
             trace.emit("task.end", result=result, stop_reason=result["termination_reason"])
             if trace.write_errors:
-                result.update(status="error", task_success=False, failure_reason="trace_write_error")
+                result.update(
+                    status="error",
+                    task_success=False,
+                    failure_reason="trace_write_error",
+                    failure_category="measurement_error",
+                )
             trace.close()
             results.append(result)
     summary = {
@@ -330,7 +380,7 @@ def run_cases(
         "variant": "B0-compatible",
         "tasks": len(results),
         "passed": sum(r["task_success"] for r in results),
-        "real_deepseek_status": "not_run" if source != "provider" or provider != "deepseek" else "run",
+        "real_deepseek_status": deepseek_api_status(results, provider, source),
         "results": results,
     }
     applicable = [r for r in results if r["sop_compliance"] is not None]

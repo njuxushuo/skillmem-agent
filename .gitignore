@@ -1,11 +1,42 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
+# Local environments, caches and build output
 .venv/
 venv/
-.env
+__pycache__/
+*.py[cod]
 .pytest_cache/
 .ruff_cache/
-dist/
+.coverage
+.coverage.*
+htmlcov/
+coverage.json
+coverage.xml
 build/
+dist/
+*.egg-info/
+
+# Local runs, raw conversations, credentials and database files
+.local/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+secrets.*
 *.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+*.jsonl
+
+# Existing research snapshots and working notes: keep locally, never vendor
+/research/
+/agent_feasibility_report.md
+/SkillMem_Agent_V1_Implementation_Plan.md
+/SkillMem_Agent_V1_Project_Architecture.md
+/task_plan.md
+/findings.md
+/progress.md

@@ -5,30 +5,34 @@ on:
     branches: [ main ]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ "3.11", "3.12" ]
+  baseline:
+    runs-on: ubuntu-22.04
+    env:
+      SUPPORT_MODEL_PROVIDER: offline
+      LANGSMITH_TRACING: 'false'
+      LANGCHAIN_TRACING_V2: 'false'
+      PIP_DISABLE_PIP_VERSION_CHECK: '1'
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.12.9'
           cache: pip
-
-      - name: Install
-        run: pip install -e ".[dev,openai]"
-
-      - name: Lint
+          cache-dependency-path: requirements.lock
+      - name: Install hash-locked dependencies
+        run: python -m pip install --require-hashes -r requirements.lock
+      - name: Install source without resolving dependencies
+        run: python -m pip install --no-index --no-build-isolation --no-deps -e '.[dev,openai]'
+      - name: Check dependency consistency and style
         run: |
-          ruff check .
-          ruff format --check .
-
-      - name: Test
-        run: pytest -q
-
-      - name: Run conversation scenarios offline
-        run: python -m support_agent.evaluate
+          python -m pip check
+          ruff check src tests scripts
+          ruff format --check src tests scripts
+      - name: Original tests, with network disabled
+        run: python scripts/run_offline.py pytest -q --cov=support_agent --cov-report=term-missing
+      - name: Original 11 scenarios, with network disabled
+        run: python scripts/run_offline.py scenarios

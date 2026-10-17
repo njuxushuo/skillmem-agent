@@ -1,0 +1,145 @@
+{
+  "upstream_url": "https://github.com/nitanandsinghupw/langgraph-support-agent",
+  "upstream_commit": "b6fe9faebff8a1af549ae7b8cabcb0b6e6479cec",
+  "upstream_tree": "ef97970558ea6652c63434a83795d803be91caeb",
+  "baseline_tag": "b0-upstream",
+  "source_files": [
+    {
+      "path": ".env.example",
+      "sha256": "dbe2c4eab65b0148576d033c819befca304ee4a1266d53e9a2a143818b76da35",
+      "lines": 14
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "c96af5ec352fa997875109683a9b06650ff790233245b345889d8b44ca199254",
+      "lines": 34
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "fbfd0e0b5a250f39ee189e0624b7c839d1f669a814dbac0793ff009fa475849d",
+      "lines": 11
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "f6aa5311d82192f4b2691c363f4015ac8cb92002a89640d2fa48054b9883edbe",
+      "lines": 21
+    },
+    {
+      "path": "README.md",
+      "sha256": "654a41212e2238ac528fa429012aac323cf56f482d5b91c52d6c9ee43d8b10ac",
+      "lines": 173
+    },
+    {
+      "path": "data/policies.md",
+      "sha256": "a39d4544e6a5a1c8eb6da3c8ce1ed190d81e66f4e4509a8192781b3ac273f6bf",
+      "lines": 17
+    },
+    {
+      "path": "data/scenarios.json",
+      "sha256": "cf95836023bf1b195067c1941f8c52b7997f1374cac0951810abc4ad2aade2c3",
+      "lines": 25
+    },
+    {
+      "path": "data/store.json",
+      "sha256": "246f50b7ad509a1a96046676ca9fe643a40a63f11a1b2c8d20fdf725523147de",
+      "lines": 21
+    },
+    {
+      "path": "examples/scenarios.txt",
+      "sha256": "cf78147f1c881a4fde47b6a4e20a89611b3b2a1ec4e4cfa26767a1e704a5c1bf",
+      "lines": 13
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "d6965e4ef2e2b538613067cd4747d91c12ec7a5e00029c3bf701f8acd6eebe65",
+      "lines": 40
+    },
+    {
+      "path": "src/support_agent/__init__.py",
+      "sha256": "6f2446e145c27cbc9484bc13fea6aed05716f381363032a314391d6842468338",
+      "lines": 5
+    },
+    {
+      "path": "src/support_agent/__main__.py",
+      "sha256": "e2a5bd15e0b1735534fe0ecb86f7ad87a12059a8a82f0229fa4781831bb3e25e",
+      "lines": 40
+    },
+    {
+      "path": "src/support_agent/api.py",
+      "sha256": "3fbce67104f3e9c710318fa04fe6838bbf39215e33e6951cbae344d65085709b",
+      "lines": 80
+    },
+    {
+      "path": "src/support_agent/evaluate.py",
+      "sha256": "39698e562a3098d82e49fabab5260b109d1e17da8a163c9b54a799b317c590dc",
+      "lines": 52
+    },
+    {
+      "path": "src/support_agent/graph.py",
+      "sha256": "9346ce69caa8adfcf1544dd307231754e562ef6f900e0862a7988e1ef1b7e325",
+      "lines": 56
+    },
+    {
+      "path": "src/support_agent/models.py",
+      "sha256": "e699cfaab3656602da7583817114fb665a672ded3b62eb3c564c67cde96735bd",
+      "lines": 36
+    },
+    {
+      "path": "src/support_agent/offline_model.py",
+      "sha256": "37506480782f0356f014a23f5dc184bc81d5fcfe19d10ba673f3c088355fd436",
+      "lines": 151
+    },
+    {
+      "path": "src/support_agent/policies_kb.py",
+      "sha256": "035d7384c8db4de45c3d94ef0508b48f01d9e1a39a4430d2e065e6e0f1569102",
+      "lines": 59
+    },
+    {
+      "path": "src/support_agent/policy.py",
+      "sha256": "2dbfba44de9d73ac29b6425547be559acb2c8cb95a32adfedba60b825ecb48a0",
+      "lines": 54
+    },
+    {
+      "path": "src/support_agent/service.py",
+      "sha256": "c5ae36cad6890fbecdb0107ca4f11aa0a5d390154e8bbafd20cbd6d944942ee5",
+      "lines": 199
+    },
+    {
+      "path": "src/support_agent/store.py",
+      "sha256": "f10073a97124884ce215b46ae3e8a4fe83fdd383fd837da4b3b69559b9ab76c0",
+      "lines": 98
+    },
+    {
+      "path": "src/support_agent/tools.py",
+      "sha256": "ca83ef51379092bc8a570449768a66c3f00b2bca75ee1e21bd733dc695ec9e96",
+      "lines": 196
+    },
+    {
+      "path": "tests/conftest.py",
+      "sha256": "3ebcac51880c895c806123c4df1da5aaf51ef0536dc271281883ba88893f1390",
+      "lines": 46
+    },
+    {
+      "path": "tests/test_api.py",
+      "sha256": "3b1c73fec2563c88593a2fa59992fd5febb0d99a896b881a01df01fb258d5ef6",
+      "lines": 51
+    },
+    {
+      "path": "tests/test_conversations.py",
+      "sha256": "ef9e265f0c9591c6bb8a301e8be8fa43f2e636002d2d1787ddfcf6d9c0b2e55c",
+      "lines": 128
+    },
+    {
+      "path": "tests/test_policy_and_tools.py",
+      "sha256": "0d585f0f011e105532b89359fb79427bcf95a9786d2cfad110770fd20ec07852",
+      "lines": 52
+    }
+  ],
+  "counts": {
+    "tracked_files": 26,
+    "python_files": 16,
+    "python_lines": 1303,
+    "src_python_lines": 1026,
+    "test_python_lines": 277
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "stage": 3,
+  "gate": "PASS",
+  "review_rounds": [
+    {
+      "round": 1,
+      "status": "FAIL",
+      "issues": [
+        "focus_overwrite",
+        "amount_limit_lost",
+        "stale_approval",
+        "stale_progress"
+      ]
+    },
+    {
+      "round": 2,
+      "status": "FAIL",
+      "issues": [
+        "pending_checkpoint_causal_order"
+      ]
+    },
+    {
+      "round": 3,
+      "status": "PASS",
+      "issues": []
+    }
+  ],
+  "implementation_sha": "9c4662687d866080a2742d64b8c15faa0d8e3093",
+  "pytest": {
+    "passed": 249,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 28.72
+  },
+  "added_tests": 96,
+  "offline_scenarios": {
+    "B0-compatible": 11,
+    "B1": 11,
+    "M": 11
+  },
+  "offline_tasks": {
+    "B0-compatible": 7,
+    "B1": 7,
+    "M": 7
+  },
+  "coverage": {
+    "covered_lines": 1756,
+    "num_statements": 1878,
+    "percent_covered": 93.50372736954206,
+    "percent_covered_display": "94",
+    "missing_lines": 122,
+    "excluded_lines": 2,
+    "percent_statements_covered": 93.50372736954206,
+    "percent_statements_covered_display": "94"
+  },
+  "sizes": {
+    "src/support_agent": {
+      "files": 18,
+      "lines": 3328,
+      "baseline_files": 15,
+      "baseline_lines": 2588
+    },
+    "tests": {
+      "files": 12,
+      "lines": 2854,
+      "baseline_files": 9,
+      "baseline_lines": 1756
+    },
+    "scripts": {
+      "files": 2,
+      "lines": 462,
+      "baseline_files": 2,
+      "baseline_lines": 458
+    }
+  },
+  "real_api_status": "not_run",
+  "new_paid_requests": 0,
+  "remote_ci": "not_run",
+  "source_test_sha256": {
+    "src/support_agent/state.py": "324f528f8c3bf39a8286c1f3d89874007fe8cd27b49dbd1a62bf02f6409bc9dd",
+    "src/support_agent/api.py": "76b625337c0ff939f9f1519eabec787b32f1b4d4c1c3aee942894f3aefb3cff4",
+    "src/support_agent/tracing.py": "ab9c7888fbcf17da6f182d13a2404adbba243f1265b49f45efbd8a4d43dc3e9a",
+    "src/support_agent/tools.py": "46f6eb3fa8f5c4e273ff2223d4a099b417286da93ff6efa885db24543e9aa30c",
+    "src/support_agent/memory.py": "137dcb3ff433308f72e82e75018d66a4d4eb4ecdf9998c2122cdb5d4cf6d167a",
+    "src/support_agent/evaluation.py": "9f5fb6d71bdd032a5f1b518a98f948ab6b3e28b70c39afed6e822cec4e907f99",
+    "src/support_agent/policy.py": "2dbfba44de9d73ac29b6425547be559acb2c8cb95a32adfedba60b825ecb48a0",
+    "src/support_agent/context.py": "769bfad1db4efad99600ef382513edaac96d7a9f491dc35800b21e2578e9a292",
+    "src/support_agent/execution.py": "9e52c07c3007c606eff73de89fc316200d0288a7e2fe7d7bf96f83635e6c4d5b",
+    "src/support_agent/__main__.py": "64cc9d7b4b52ce7127716da8d1d6e451e22da7ab9959d55d5527c488eaeef0ef",
+    "src/support_agent/store.py": "d6e971f259b7ef2ed3e7bba4950f6c93d0ff3def93234bc34ee304357173d25a",
+    "src/support_agent/models.py": "bd39347a86fcde97c646deab3c70baf168fc859f62cffd95d0611250f251d5fc",
+    "src/support_agent/policies_kb.py": "23f3d80a5b1faf14cd80cf9f8c40afcbddaf4137783828d699afbdbe7c0d642c",
+    "src/support_agent/graph.py": "17bebc3bf6ab59a2cbfee8ede2306db299b4523b6edff89a91987e7fc7441aec",
+    "src/support_agent/evaluate.py": "9c64ef485b96ff3ae5951761d8e495908fa4c871c83a436292b8a8e093c7076a",
+    "src/support_agent/service.py": "6c2f1eb710271f3e90f81abbf819d94fbe6632a12df90c691885150c4bd9cb2b",
+    "src/support_agent/__init__.py": "6f2446e145c27cbc9484bc13fea6aed05716f381363032a314391d6842468338",
+    "src/support_agent/offline_model.py": "37506480782f0356f014a23f5dc184bc81d5fcfe19d10ba673f3c088355fd436",
+    "tests/conftest.py": "dd59cd9d6a3a869096c82872cdc10a42b723f09c0cc8eadbc4843847ed60d1b4",
+    "tests/test_live_smoke.py": "c52f3fb80f74250b1c245468368d08f7acd29d9fd0940418554644d76fdc2736",
+    "tests/test_stage3_acceptance.py": "769d9e028feded3931c5c8acc77560f390424c852500ed5487d25c81353357a8",
+    "tests/test_policy_and_tools.py": "0d585f0f011e105532b89359fb79427bcf95a9786d2cfad110770fd20ec07852",
+    "tests/test_reliability.py": "504d97e087b33c2138fe3dfab539fc003176857a24b0123db07f7b498d7e9825",
+    "tests/test_deepseek.py": "008ccd98b799b88feef259bcae4ae07062ea617bdf48a224f51443899f800414",
+    "tests/test_memory_context.py": "2c2d3e3aa8cdfe3723c593c5c5ea0c62d9635ddb56f5c98bab41b6a6ddccad91",
+    "tests/test_evaluation.py": "448b16a79217f6fd4a2396109704ec6bd30c69cbeca823d17e802478342e3357",
+    "tests/test_api.py": "3b1c73fec2563c88593a2fa59992fd5febb0d99a896b881a01df01fb258d5ef6",
+    "tests/test_conversations.py": "ef9e265f0c9591c6bb8a301e8be8fa43f2e636002d2d1787ddfcf6d9c0b2e55c",
+    "tests/test_context_measurement.py": "7ab8cb62a43d208b6f7e5ef883d6058f5047401ffffd2f5cf4c6ded47b66c5dd",
+    "tests/test_persistence.py": "2a34394111cceb640939d75b27769592c4a4434efef71a5b912722de87aabb9a"
+  }
+}

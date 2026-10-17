@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from pathlib import Path
 from typing import Any
 
 from langchain_core.language_models import BaseChatModel
@@ -53,14 +54,29 @@ class OfflineSupportModel(BaseChatModel):
     def _generate(
         self, messages: list[BaseMessage], stop: list[str] | None = None, run_manager: Any = None, **kwargs: Any
     ) -> ChatResult:
-        return ChatResult(generations=[ChatGeneration(message=self._respond(messages))])
+        reply = self._respond(messages)
+        if "select_skill" in self.tool_names and reply.tool_calls:
+            wanted = reply.tool_calls[0]["name"]
+            if wanted not in self.tool_names:
+                # Protocol-only stand-in: use the same registry; no claim of LLM routing quality.
+                from support_agent.skills import load_skills
+
+                skills = load_skills(Path(__file__).resolve().parents[2] / "data")
+                skill = next((s for s in skills.values() if wanted in s.tool_names), None)
+                if skill is not None:
+                    reply = _call("select_skill", skill_id=skill.id)
+        return ChatResult(generations=[ChatGeneration(message=reply)])
 
     def _respond(self, messages: list[BaseMessage]) -> AIMessage:
         last_human = max(i for i, m in enumerate(messages) if isinstance(m, HumanMessage))
         text = str(messages[last_human].content)
         this_turn = messages[last_human + 1 :]
         results = {
-            m.name: json.loads(m.content) for m in this_turn if isinstance(m, ToolMessage) and _is_json(m.content)
+            m.name: json.loads(m.content)
+            for m in this_turn
+            if isinstance(m, ToolMessage)
+            and _is_json(m.content)
+            and not ("select_skill" in self.tool_names and m.name == "select_skill")
         }
         intent = _intent(text)
         match = _ORDER_ID.search(text)

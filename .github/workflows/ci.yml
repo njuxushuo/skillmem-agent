@@ -40,3 +40,5 @@ jobs:
         run: python scripts/run_offline.py tasks
       - name: M task runner, with network disabled
         run: SKILLMEM_VARIANT=M python scripts/run_offline.py tasks
+      - name: MS task runner, with network disabled
+        run: SKILLMEM_VARIANT=MS python scripts/run_offline.py tasks

@@ -413,3 +413,11 @@ response = model.invoke(context_view, config=config.runnable_config)
 M的三个上下文策略只影响模型输入，完整Messages保留。估算使用UTF-8字节与消息封装余量，计入System、Schema、任务投影、历史、输出与余量；不是精确计费tokenizer。B1仍使用原40消息策略。未知旧checkpoint字段采用安全默认值，旧观察不得覆盖最新用户焦点或完成新任务。历史旧B0业务数据库仍遵守Stage 2的拒绝自动迁移限制。
 
 必要接线修改包括Service变体/配置、Evaluation配置元数据、Tracing估算与真实usage关联、离线验证脚本临时数据库隔离；没有新增框架或依赖。`service.py`超过原行数提醒阈值，仍包含既有registry与审批编排，暂不为行数强制拆分。Skill/Planning在本阶段尚未实现。
+
+## 12. Stage 4 已实现边界
+
+MS复用M和B1执行层，新增`skills.py`与`data/skills/{order_shipping,refund,cancel,policy_support}.md`。Registry保存固定ID、描述、SOP路径/文本及业务工具集合；模型输入只注入当前SOP。每轮Agent重新绑定允许业务工具与公共`select_skill/escalate_to_human`；Guard独立复核allowlist，不能通过猜工具名绕过。
+
+`select_skill`是同一模型的控制工具，输出匹配ToolMessage并更新active_skill；不创建第二Router模型，不改订单业务权限。审批期间冻结；完整checkpoint确认终态后同次恢复中可继续切换。旧B1/M待审批迁入MS时，只为精确匹配可信审批消息/调用/订单的原退款恢复refund Skill，单独记录skill.restored，不伪造模型路由。
+
+B1/M的full_sop显式对照注入与MS相同的四份SOP，并说明所有业务工具已开放、不执行选择指令；默认不变。MS拒绝full_sop。Tracing分开记录业务入口、控制入口、切换、所有模型usage与路由响应usage子集；格式错误但能识别select_skill的响应也计路由成本，缺usage不补零。离线规则模型只增加绑定select时的协议演示，不是Skill效果评测。

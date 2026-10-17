@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from time import time
+from time import perf_counter, time
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage, trim_messages
@@ -18,9 +18,10 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from pydantic import ValidationError
 
-from support_agent.context import ContextBudget, ContextError, build_model_context
+from support_agent.context import ContextBudget, ContextError, _pending_approval_view, build_model_context
 from support_agent.execution import ExecutionControl, ExecutionStopped, check_deadline, tool_error
 from support_agent.memory import observe_tool_results, user_memory_update
+from support_agent.skills import SkillSpec, allowed_tool_names, render_skill_index, select_skill
 from support_agent.state import SupportState
 
 SYSTEM_PROMPT = """You are the customer support assistant for Nordwind, an e-bike shop.
@@ -48,9 +49,13 @@ def build_graph(
     memory_enabled: bool = False,
     context_strategy: str | None = None,
     context_budget: ContextBudget | None = None,
+    skills: dict[str, SkillSpec] | None = None,
+    full_sop: str = "",
 ) -> CompiledStateGraph:
-    model_with_tools = model.bind_tools(list(tools))
+    model_with_tools = None if skills else model.bind_tools(list(tools))
     schemas = [convert_to_openai_tool(tool) for tool in tools] if memory_enabled else []
+    tool_pool = [*tools, select_skill] if skills else list(tools)
+    skill_index = render_skill_index(skills) if skills else ""
 
     def agent(state, config: RunnableConfig) -> dict:
         customer_id = (config.get("configurable") or {}).get("customer_id", "")
@@ -69,12 +74,23 @@ def build_graph(
             return {"messages": [reply]}
         updates = {}
         try:
+            current_model, current_schemas = model_with_tools, schemas
+            active_sop = full_sop
+            if skills:
+                allowed = allowed_tool_names(state.get("active_skill"), skills)
+                current_tools = [tool for tool in tool_pool if tool.name in allowed]
+                current_schemas = [convert_to_openai_tool(tool) for tool in current_tools]
+                current_model = model.bind_tools(current_tools)
+                current_skill = skills.get(state.get("active_skill"))
+                active_sop = current_skill.sop if current_skill else ""
             if memory_enabled:
                 updates = user_memory_update(state)
                 context, diagnostics = build_model_context(
                     {**state, **updates},
                     system_policy=SYSTEM_PROMPT.format(customer_name=name),
-                    tool_schemas=schemas,
+                    tool_schemas=current_schemas,
+                    skill_index=skill_index,
+                    active_sop=active_sop,
                     budget=context_budget,
                     strategy=context_strategy,
                     pending_approval=config["configurable"].get("pending_approval"),
@@ -83,7 +99,8 @@ def build_graph(
                 if trace:
                     trace.emit("context.built", diagnostics=diagnostics, active_skill=state.get("active_skill"))
             else:
-                context = [SystemMessage(SYSTEM_PROMPT.format(customer_name=name)), *history]
+                system = SYSTEM_PROMPT.format(customer_name=name) + ("\n\n" + full_sop if full_sop else "")
+                context = [SystemMessage(system), *history]
             control.consume(config["configurable"]["thread_id"], "model_calls", config["configurable"].get("deadline"))
             kwargs = {}
             if (
@@ -92,7 +109,7 @@ def build_graph(
                 and not getattr(model, "max_completion_tokens", None)
             ):
                 kwargs["max_tokens"] = context_budget.output_tokens
-            reply = model_with_tools.invoke(context, config, **kwargs)
+            reply = current_model.invoke(context, config, **kwargs)
             return {**updates, "messages": [reply]}
         except GraphInterrupt:
             raise
@@ -119,7 +136,10 @@ def build_graph(
     graph = StateGraph(SupportState if memory_enabled else ExecutionState if control else MessagesState)
     graph.add_node("agent", agent)
     graph.add_node(
-        "tools", guarded_tools(tools, control, trace) if control else ToolNode(list(tools), handle_tool_errors=True)
+        "tools",
+        guarded_tools(tools, control, trace, skills=skills)
+        if control
+        else ToolNode(list(tools), handle_tool_errors=True),
     )
     graph.add_edge(START, "agent")
     graph.add_conditional_edges(
@@ -156,8 +176,10 @@ def b1_route(state):
     return "tools" if last.tool_calls or last.invalid_tool_calls else END
 
 
-def guarded_tools(tools, control, trace):
+def guarded_tools(tools, control, trace, *, skills: dict[str, SkillSpec] | None = None):
     by_name = {t.name: t for t in tools}
+    if skills:
+        by_name["select_skill"] = select_skill
 
     def error_handler(exc: Exception) -> str:
         code = (
@@ -177,6 +199,23 @@ def guarded_tools(tools, control, trace):
         code = None
         fatal = False
         ids = [c.get("id") for c in calls]
+        pending = (
+            _pending_approval_view(state["messages"], config["configurable"].get("pending_approval"))
+            if skills
+            else None
+        )
+        # Restore only the exact trusted interrupted refund when enabling MS on an older checkpoint.
+        restored_skill = None
+        if skills and state.get("active_skill") is None and pending and len(calls) == 1:
+            call = calls[0]
+            if (
+                call["name"] == "request_refund"
+                and call.get("id") == pending.get("source_tool_call_id")
+                and message.id == pending.get("source_message_id")
+                and isinstance(call.get("args"), dict)
+                and str(call["args"].get("order_id", "")).strip().lstrip("#") == pending.get("order_id")
+            ):
+                restored_skill = "refund"
         if any(not i for i in ids) or len(ids) != len(set(ids)):
             code, fatal = "invalid_tool_call_id", True
         elif len(calls) != 1:
@@ -185,6 +224,8 @@ def guarded_tools(tools, control, trace):
             code = "invalid_parameters"
         elif calls[0]["name"] not in by_name:
             code = "unknown_tool"
+        elif skills and calls[0]["name"] not in allowed_tool_names(restored_skill or state.get("active_skill"), skills):
+            code = "tool_not_allowed_for_skill"
         else:
             tool, args = by_name[calls[0]["name"]], calls[0]["args"]
             try:
@@ -207,7 +248,55 @@ def guarded_tools(tools, control, trace):
         settings["tool_deadline"] = min(settings["deadline"], time() + control.limits.tool_seconds)
         try:
             control.consume(settings["thread_id"], "tool_calls", settings["deadline"])
+            if skills and calls[0]["name"] == "select_skill":
+                started = perf_counter()
+                selected = calls[0]["args"]["skill_id"]
+                if trace:
+                    trace.emit("skill.selection_start", tool_call_id=calls[0]["id"], skill_id=selected)
+                error = "skill_locked_for_approval" if pending else "unknown_skill" if selected not in skills else None
+                if error:
+                    result = {
+                        "messages": [
+                            ToolMessage(
+                                tool_error(error), tool_call_id=calls[0]["id"], name="select_skill", status="error"
+                            )
+                        ]
+                    }
+                else:
+                    result = {
+                        "messages": [
+                            ToolMessage(
+                                select_skill.func(selected),
+                                tool_call_id=calls[0]["id"],
+                                name="select_skill",
+                            )
+                        ],
+                        "active_skill": selected,
+                    }
+                    if trace:
+                        trace.emit(
+                            "skill.selected",
+                            old_skill=state.get("active_skill"),
+                            new_skill=selected,
+                            tool_call_id=calls[0]["id"],
+                            changed=selected != state.get("active_skill"),
+                            latency_ms=(perf_counter() - started) * 1000,
+                        )
+                if trace:
+                    trace.emit(
+                        "skill.selection_end",
+                        tool_call_id=calls[0]["id"],
+                        skill_id=selected,
+                        outcome="rejected" if error else "success",
+                        error=error,
+                        latency_ms=(perf_counter() - started) * 1000,
+                    )
+                return result
             result = node.invoke(state, {**config, "configurable": settings})
+            if restored_skill:
+                result["active_skill"] = restored_skill
+                if trace:
+                    trace.emit("skill.restored", active_skill=restored_skill, source="approval_registry")
             check_deadline(settings["tool_deadline"])
         except GraphInterrupt:
             raise

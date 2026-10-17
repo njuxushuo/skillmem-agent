@@ -63,6 +63,7 @@ class TraceRecorder(BaseCallbackHandler):
         self._starts: dict[str, float] = {}
         self._tool_context = ContextVar(f"trace_tool_{run_id}", default=None)
         self._observed: set[str] = set()
+        self._active_skill: str | None = None
         self._context: dict | None = None
         self._request_contexts: dict[str, dict] = {}
         self._file = os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w")
@@ -86,14 +87,17 @@ class TraceRecorder(BaseCallbackHandler):
 
     def emit(self, event: str, **fields) -> None:
         with self._lock:
+            if event == "skill.selected":
+                self._active_skill = fields.get("new_skill")
             if event == "context.built":
+                self._active_skill = fields.get("active_skill")
                 self._context = self.clean(fields.get("diagnostics", {}))
             row = self.clean(
                 {
                     "run_id": self.run_id,
                     "thread_id": self.thread_id,
                     "step": len(self.events) + 1,
-                    "active_skill": None,
+                    "active_skill": self._active_skill,
                     "time": datetime.now(UTC).isoformat(),
                     "event": event,
                     **fields,
@@ -279,11 +283,26 @@ class TraceRecorder(BaseCallbackHandler):
 
         responses = [e for e in self.events if e["event"] == "model.response"]
         requests = count("model.request")
+        routing_responses = [
+            e
+            for e in responses
+            if any(
+                c.get("name") == "select_skill"
+                for c in [
+                    *e["message"]["data"].get("tool_calls", []),
+                    *e["message"]["data"].get("invalid_tool_calls", []),
+                ]
+            )
+        ]
         stats = {
             "model_calls": requests,
             "model_response_count": len(responses),
             "model_error_count": count("model.error"),
             "tool_proposed_count": count("tool.proposed"),
+            "business_tool_proposed_count": sum(
+                e["event"] == "tool.proposed" and e["tool_name"] != "select_skill" for e in self.events
+            ),
+            "skill_model_calls": len(routing_responses),
             "tool_executed_count": count("tool.execution_start"),
             "tool_success_count": sum(
                 e["event"] == "tool.execution_end" and e["outcome"] == "success" for e in self.events
@@ -301,11 +320,24 @@ class TraceRecorder(BaseCallbackHandler):
             "tool_paused_count": count("tool.paused"),
             "tool_idempotent_replay_count": count("tool.idempotent_replay"),
             "guard_rejected_count": count("execution.guard_rejected"),
-            "skill_switch_count": 0,
+            "skill_switch_count": sum(e["event"] == "skill.selected" and e.get("changed", True) for e in self.events),
+            "skill_routing_count": count("skill.selection_start"),
+            "skill_rejected_count": sum(
+                e["event"] == "skill.selection_end" and e.get("outcome") == "rejected" for e in self.events
+            ),
+            "control_executed_count": count("skill.selection_start"),
+            "total_tool_executed_count": count("tool.execution_start") + count("skill.selection_start"),
+            "skill_routing_latency_ms": sum(
+                e.get("latency_ms", 0) for e in self.events if e["event"] == "skill.selection_end"
+            ),
             "usage_source": self.source,
             "cost": None,
         }
         for field in ("input_tokens", "output_tokens", "total_tokens"):
+            routing_values = [e["usage"][field] for e in routing_responses if e["usage"][field] is not None]
+            stats[f"skill_{field}"] = (
+                sum(routing_values) if routing_responses and len(routing_values) == len(routing_responses) else None
+            )
             values = [e["usage"][field] for e in responses if e["usage"][field] is not None]
             stats[field] = sum(values) if len(values) == requests and requests else None
             stats[f"known_{field}"] = sum(values)

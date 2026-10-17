@@ -16,11 +16,11 @@ from support_agent.models import get_model
 from support_agent.service import SupportService, default_data_dir
 
 
-def run_scenarios(provider: str | None = None, *, variant: str | None = None) -> list[dict]:
+def run_scenarios(provider: str | None = None, *, variant: str | None = None, full_sop: bool = False) -> list[dict]:
     scenarios = json.loads((default_data_dir() / "scenarios.json").read_text(encoding="utf-8"))
     results = []
     for scenario in scenarios:
-        service = SupportService(model=get_model(provider), variant=variant)
+        service = SupportService(model=get_model(provider), variant=variant, full_sop=full_sop)
         result = service.chat(scenario["customer"], scenario["message"])
         checks = {
             "tools": result.tools_used == scenario["expect_tools"],
@@ -47,7 +47,8 @@ def main() -> None:
     parser.add_argument("--tasks", type=Path, help="Versioned multi-turn evaluation JSON")
     parser.add_argument("--output", type=Path, default=Path(".local/runs"))
     parser.add_argument("--repeat", type=int, default=1)
-    parser.add_argument("--variant", choices=["B0-compatible", "B1", "M"])
+    parser.add_argument("--variant", choices=["B0-compatible", "B1", "M", "MS"])
+    parser.add_argument("--full-sop", action="store_true", help="Inject all identical skill SOPs for fairness control")
     parser.add_argument("--max-model-calls", type=int, default=8)
     parser.add_argument("--max-tool-calls", type=int, default=8)
     parser.add_argument("--tool-timeout", type=float, default=5)
@@ -62,11 +63,12 @@ def main() -> None:
             provider=args.provider or "offline",
             repeat=args.repeat,
             variant=args.variant,
+            full_sop=args.full_sop,
             limits=ExecutionLimits(args.max_model_calls, args.max_tool_calls, args.turn_timeout, args.tool_timeout),
         )
         print(f"{summary['passed']}/{summary['tasks']} tasks passed; {summary['run_dir']}/summary.json")
         raise SystemExit(0 if summary["passed"] == summary["tasks"] else 1)
-    results = run_scenarios(args.provider, variant=args.variant)
+    results = run_scenarios(args.provider, variant=args.variant, full_sop=args.full_sop)
     for r in results:
         mark = "PASS" if r["passed"] else f"FAIL ({', '.join(r['failed_checks'])})"
         print(f"{mark:<22} {r['name']:<36} {r['status']:<18} {', '.join(r['tools'])}")

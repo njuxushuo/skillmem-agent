@@ -26,6 +26,7 @@ from support_agent.graph import build_graph
 from support_agent.models import get_model
 from support_agent.policies_kb import PolicyBase
 from support_agent.policy import PolicyConfig
+from support_agent.skills import load_skills
 from support_agent.store import Store
 from support_agent.tools import make_tools
 from support_agent.tracing import TraceRecorder
@@ -181,18 +182,24 @@ class SupportService:
         limits: ExecutionLimits | None = None,
         context_strategy: str | None = None,
         context_budget: ContextBudget | None = None,
+        full_sop: bool = False,
     ) -> None:
         """B1 db_path persists business, receipts, budgets, approvals and checkpoints; None is ephemeral."""
         with database_lock(db_path, "initialize"):
             self.variant = variant or os.getenv("SKILLMEM_VARIANT", "B1")
-            if self.variant not in {"B0-compatible", "B1", "M"}:
-                raise ValueError("Only B0-compatible, B1 and M are implemented")
-            self.memory_enabled = self.variant == "M"
+            if self.variant not in {"B0-compatible", "B1", "M", "MS"}:
+                raise ValueError("Only B0-compatible, B1, M and MS are implemented")
+            if type(full_sop) is not bool or (full_sop and self.variant not in {"B1", "M"}):
+                raise ValueError("full_sop is a boolean control for B1 or M only")
+            self.full_sop = full_sop
+            self.skill_enabled = self.variant == "MS"
+            self.memory_enabled = self.variant in {"M", "MS"}
             self.context_strategy = None
             self.context_budget = None
             if db_path:
                 Path(db_path).parent.mkdir(parents=True, exist_ok=True)
             data_dir = data_dir or default_data_dir()
+            skills = load_skills(data_dir) if self.skill_enabled or self.full_sop else None
             self.store = store or Store.load(data_dir / "store.json")
             self.policy = policy or PolicyConfig()
             self.control = None
@@ -240,7 +247,7 @@ class SupportService:
                     raise ValueError("Invalid context strategy or output reserve below model output limit")
             elif context_strategy is not None or context_budget is not None:
                 self.close()
-                raise ValueError("Context settings require the M variant")
+                raise ValueError("Context settings require the M or MS variant")
             self.graph = build_graph(
                 model,
                 tools,
@@ -251,6 +258,15 @@ class SupportService:
                 memory_enabled=self.memory_enabled,
                 context_strategy=self.context_strategy,
                 context_budget=self.context_budget,
+                skills=skills if self.skill_enabled else None,
+                full_sop=(
+                    "All skills and their business tools are already available in this comparison mode. "
+                    "Use business tools directly; ignore SOP instructions to select or switch skills. "
+                    "There is no select_skill tool and no selection is required.\n\n"
+                    + "\n\n".join(skill.sop for skill in skills.values())
+                )
+                if self.full_sop
+                else "",
             )
 
             if self.control and db_path:

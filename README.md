@@ -2,7 +2,7 @@
 
 基于 [nitanandsinghupw/langgraph-support-agent](https://github.com/nitanandsinghupw/langgraph-support-agent) 的轻量单 Agent 电商售后研究项目，沿用 LangGraph、原8个业务工具、政策校验和人工审批。
 
-**当前完成 Stage 3：TaskMemory 与预算 Context（G3 PASS）。** 新增 M 变体，B1 的 SQLite 幂等、审批恢复和执行限制共用；B0/B1 独立保留。249项离线测试通过；详见[Stage 3报告](docs/reports/phase_3.md)，真实模型消融尚未运行。
+**当前完成 Stage 4：动态 Skill（G3/G4 PASS）。** 新增 M 变体，B1 的 SQLite 幂等、审批恢复和执行限制共用；B0/B1 独立保留。354项离线测试通过；详见[Stage 4报告](docs/reports/phase_4.md)，真实模型消融尚未运行。
 
 
 ## 来源与版本
@@ -79,7 +79,7 @@ skillmem-agent/
 └── README.md、LICENSE、pyproject.toml、requirements.lock
 ```
 
-本地`research/`取证快照及旧笔记不提交；`.local/`保存依赖缓存、原始日志和运行数据库。Stage 3新增`state.py/memory.py/context.py`，均有实际调用与测试；Skill和Planning尚未实现。
+本地`research/`取证快照及旧笔记不提交；`.local/`保存依赖缓存、原始日志和运行数据库。Stage 3新增`state.py/memory.py/context.py`，均有实际调用与测试；新增`skills.py`与`data/skills/`四份SOP；Planning未实现。
 
 [实施规范](docs/implementation_plan.md)决定功能范围和Gate；[架构规范](docs/architecture.md)决定目录和依赖边界。本轮经授权，Stage 3–5依次通过独立审查与测试后自动推进。
 
@@ -129,3 +129,14 @@ SKILLMEM_VARIANT=M .venv/bin/python scripts/run_offline.py tasks
 ```
 
 B0/B1仍使用原历史策略；M纯上下文策略对照可显式指定`full_history`或`legacy_trim`，它们超预算时失败，不暗中进行额外裁剪。用户约束属于未验证输入，工具事实带来源和历史快照标记；业务执行仍由原Policy重验。
+
+## Stage 4 Skill与公平对照
+
+`SKILLMEM_VARIANT=MS`在M上启用四个Skill：order_shipping、refund、cancel、policy_support。同一个模型通过`select_skill`选择后，下一请求只绑定对应业务工具与公共选择/人工升级工具；执行Guard再次检查允许列表。Skill选择不授予业务权限，也不替代审批或Policy。
+
+```bash
+SKILLMEM_VARIANT=MS .venv/bin/python scripts/run_offline.py tasks
+.venv/bin/python -m support_agent.evaluate --provider offline --tasks data/eval_tasks.json --variant B1 --full-sop
+```
+
+`--full-sop`供B1/M全量注入与MS完全相同的四份SOP，作为知识量公平对照；MS拒绝该组合。原11场景的精确工具序列只用于B0/B1/M回归，MS另计真实选择步骤。规则模型新增仅用于Skill协议演示的选择逻辑，不能据此推断真实模型效果。统计保留业务工具执行数、Skill选择数、两者合计和所有模型usage；选择模型调用的Token是总量子集，不能重复加总。

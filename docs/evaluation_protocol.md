@@ -112,3 +112,7 @@ Stage 3/4引入优化时须继续使用同一ExecutionLimits、工具/审批实�
 ## Stage 3 配置与诊断
 
 新增M变体复用B1安全层。`run_cases`可传`context_strategy/context_budget`，结果与task.start保存有效设置。`context.built`记录估算及分项，`context.measured`按同次模型call_id关联actual_input_tokens与usage_source；Mock计量与真实provider严格分开。B1 context字段null，完整checkpoint不裁剪。G3阶段仅离线/Mock验证，不代表M真实任务效果。
+
+## Stage 4路由计量与SOP公平性
+
+MS=M+四Skill；full_sop只允许B1/M，全文与MS单独加载的四份SOP相同。每任务保存full_sop和skill_sop_hash。tool_proposed_count包含控制提议，business_tool_proposed_count剔除select_skill；tool_executed_count仍为业务函数入口，skill_routing_count/control_executed_count为通过Guard后选择逻辑入口（包括未知ID的拒绝），total_tool_executed_count是两者之和。skill_switch_count仅实际改变active_skill的成功选择，重复选择仍计成本。skill_model_calls是响应含select_skill的模型调用数，skill_*tokens为其usage子集，所有模型调用已计入input/output/total，不应再加一次。skill_routing_latency_ms仅控制函数耗时，完整路由模型耗时已在model.response与总任务latency内。

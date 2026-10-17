@@ -270,6 +270,7 @@ def provenance(data_dir: Path, cases: list) -> dict:
         "dataset_hash": digest(cases),
         "fixture_hash": hashlib.sha256((data_dir / "store.json").read_bytes()).hexdigest(),
         "policy_hash": hashlib.sha256((data_dir / "policies.md").read_bytes()).hexdigest(),
+        "skill_sop_hash": digest({p.name: p.read_text() for p in sorted((data_dir / "skills").glob("*.md"))}),
     }
 
 
@@ -283,13 +284,14 @@ def run_cases(
     repeat: int = 1,
     variant: str | None = None,
     limits: ExecutionLimits | None = None,
+    full_sop: bool = False,
     context_strategy: str | None = None,
     context_budget: ContextBudget | None = None,
 ) -> dict:
     """Run every case independently; return public-shaped metrics, keep raw evidence local."""
     variant = variant or os.getenv("SKILLMEM_VARIANT", "B1")
     limits = limits or ExecutionLimits()
-    if variant not in {"B0-compatible", "B1", "M"}:
+    if variant not in {"B0-compatible", "B1", "M", "MS"}:
         raise ValueError("Unsupported variant")
     if not isinstance(cases, list) or not cases:
         raise ValueError("cases must be a nonempty list")
@@ -343,13 +345,16 @@ def run_cases(
                         trace=trace,
                         variant=variant,
                         limits=limits,
+                        full_sop=full_sop,
                         context_strategy=context_strategy,
                         context_budget=context_budget,
                     )
+                    result["full_sop"] = service.full_sop
                     result["context_strategy"] = service.context_strategy
                     result["context_budget"] = asdict(service.context_budget) if service.context_budget else None
                     trace.emit(
                         "task.start",
+                        full_sop=result["full_sop"],
                         context_strategy=result["context_strategy"],
                         context_budget=result["context_budget"],
                         case=case.model_dump(mode="json"),

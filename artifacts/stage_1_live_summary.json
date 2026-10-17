@@ -1,0 +1,440 @@
+{
+  "evidence_source": "real_deepseek_api_with_synthetic_business_fixtures",
+  "model_config": {
+    "type": "openai-chat",
+    "model": "deepseek-flash",
+    "base_url": "https://api.deepseek.com",
+    "temperature": 0.0,
+    "max_tokens": 1024,
+    "timeout": 60.0,
+    "retries": 0,
+    "extra_body": {
+      "thinking": {
+        "type": "disabled"
+      }
+    }
+  },
+  "initial_oracle_passed": 0,
+  "tasks": 3,
+  "rejudged_passed": 3,
+  "rejudgment_mode": "offline_rejudgment_of_saved_trace",
+  "additional_api_calls_for_rejudgment": 0,
+  "api_status": "api_succeeded",
+  "gate": "PASS",
+  "original_code_commit": "a6efda9813e8453eb5483124ad3ce7a0ff2c3e78",
+  "audit_code_commit": "dd049278b1ec5c637400a60a75fc459c8da47204",
+  "audit_working_tree_dirty": false,
+  "original_result_sha256": "93edfb28487f37b0b97a363232533e49c21e8d7bf0ab1a69250f58b620d9e93e",
+  "trace_sha256": [
+    "9a201a966d5bd2c57fe133e09e303eaf10ddafe7c69e9f56e594cef1f31598e8",
+    "611c60caa32c71277f22677542a405559ad7866364fb10170cbe1d674da819b9",
+    "6e72626dfd5115cabbdd7b4fb75cc75dfeaa9002c91d472a8c5cd44ab38e5fdc"
+  ],
+  "budget": {
+    "limits": {
+      "requests": 15,
+      "usd": "2.00",
+      "per_request_usd": "0.3158016",
+      "context_limit": 1048576,
+      "output_limit": 1024,
+      "input_rate": "0.30",
+      "output_rate": "1.20",
+      "pricing_url": "https://api-docs.deepseek.com/quick_start/pricing",
+      "pricing_verified_on": "2026-10-17"
+    },
+    "attempts": [
+      {
+        "number": 1,
+        "started_at": "2026-10-17T12:15:04.865889+00:00",
+        "payload_sha256": "03981ca955a7bcfca4455dd07bbe57ce2b7060f216458dc6a67c2f0760550183",
+        "upper_usd": "0.0003156",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 888,
+          "completion_tokens": 41,
+          "total_tokens": 929,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "prompt_cache_hit_tokens": 0,
+          "prompt_cache_miss_tokens": 888
+        },
+        "http_status": 200,
+        "latency_ms": 1485.3933043777943,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 2,
+        "started_at": "2026-10-17T12:15:06.368052+00:00",
+        "payload_sha256": "c536d2b28720c53bed1ff12213417827f6dfc2031be3a5fb8828537ba20af950",
+        "upper_usd": "0.0003414",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 994,
+          "completion_tokens": 36,
+          "total_tokens": 1030,
+          "prompt_tokens_details": {
+            "cached_tokens": 768
+          },
+          "prompt_cache_hit_tokens": 768,
+          "prompt_cache_miss_tokens": 226
+        },
+        "http_status": 200,
+        "latency_ms": 1311.9229450821877,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 3,
+        "started_at": "2026-10-17T12:15:07.712680+00:00",
+        "payload_sha256": "b63b9e5014d1b536def35458122823594b204fb1579fd535aab4b766fa0d17f0",
+        "upper_usd": "0.0003678",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 890,
+          "completion_tokens": 84,
+          "total_tokens": 974,
+          "prompt_tokens_details": {
+            "cached_tokens": 640
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 250
+        },
+        "http_status": 200,
+        "latency_ms": 1684.2059157788754,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 4,
+        "started_at": "2026-10-17T12:15:09.410414+00:00",
+        "payload_sha256": "114c0a7c2a20188c8b29e4a49f4259a7803a5dde48056c3285fdb80e8c234c4d",
+        "upper_usd": "0.0004323",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 1137,
+          "completion_tokens": 76,
+          "total_tokens": 1213,
+          "prompt_tokens_details": {
+            "cached_tokens": 896
+          },
+          "prompt_cache_hit_tokens": 896,
+          "prompt_cache_miss_tokens": 241
+        },
+        "http_status": 200,
+        "latency_ms": 1488.9688268303871,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 5,
+        "started_at": "2026-10-17T12:15:10.911170+00:00",
+        "payload_sha256": "b2a9075903470a73c820799febe91466494a08b4b3614fa0a23339a6846db72a",
+        "upper_usd": "0.0004548",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 1284,
+          "completion_tokens": 58,
+          "total_tokens": 1342,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024
+          },
+          "prompt_cache_hit_tokens": 1024,
+          "prompt_cache_miss_tokens": 260
+        },
+        "http_status": 200,
+        "latency_ms": 1811.1643120646477,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 6,
+        "started_at": "2026-10-17T12:15:12.766711+00:00",
+        "payload_sha256": "6f23168469fd00077aeb0443078ebc4b395277ad0fc6244bcc3c4605c9e83a50",
+        "upper_usd": "0.0003264",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 888,
+          "completion_tokens": 50,
+          "total_tokens": 938,
+          "prompt_tokens_details": {
+            "cached_tokens": 640
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 248
+        },
+        "http_status": 200,
+        "latency_ms": 1253.8476884365082,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 7,
+        "started_at": "2026-10-17T12:15:14.033722+00:00",
+        "payload_sha256": "225fe6aafec21f82b5cdf6bb5569f62192cc89bf83865a2aa3cb5aee573794de",
+        "upper_usd": "0.000396",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 1016,
+          "completion_tokens": 76,
+          "total_tokens": 1092,
+          "prompt_tokens_details": {
+            "cached_tokens": 768
+          },
+          "prompt_cache_hit_tokens": 768,
+          "prompt_cache_miss_tokens": 248
+        },
+        "http_status": 200,
+        "latency_ms": 1655.8114364743233,
+        "error": null,
+        "usage_complete": true
+      },
+      {
+        "number": 8,
+        "started_at": "2026-10-17T12:15:15.711079+00:00",
+        "payload_sha256": "3324be04e2cc8d4912d81d79764d40cc4b0842485e13824d5a2d6d8501880876",
+        "upper_usd": "0.0004206",
+        "status": "response",
+        "usage": {
+          "prompt_tokens": 1166,
+          "completion_tokens": 59,
+          "total_tokens": 1225,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024
+          },
+          "prompt_cache_hit_tokens": 1024,
+          "prompt_cache_miss_tokens": 142
+        },
+        "http_status": 200,
+        "latency_ms": 1521.3594026863575,
+        "error": null,
+        "usage_complete": true
+      }
+    ],
+    "stopped": null,
+    "claimed": true,
+    "http_attempts": 8,
+    "cost_upper_usd": "0.0030549",
+    "actual_billed_usd": null
+  },
+  "actual_billed_usd": null,
+  "cache_aware_peak_price_calculated_usd": "0.001361460",
+  "cache_aware_off_peak_price_calculated_usd": "0.000680730",
+  "input_tokens": 8263,
+  "output_tokens": 480,
+  "total_tokens": 8743,
+  "results": [
+    {
+      "git_sha": "a6efda9813e8453eb5483124ad3ce7a0ff2c3e78",
+      "working_tree_dirty": false,
+      "source_hash": "22b484a85fed63e5febefeb7be564581d049662dbcce2d4248431d1bd51a3c23",
+      "dataset_hash": "4b918f3f720e9010e884e9f18dff149cf18d5a659d3aff90b6838f4bf3131957",
+      "fixture_hash": "246f50b7ad509a1a96046676ca9fe643a40a63f11a1b2c8d20fdf725523147de",
+      "policy_hash": "a39d4544e6a5a1c8eb6da3c8ce1ed190d81e66f4e4509a8192781b3ac273f6bf",
+      "case_id": "shipping_multi_turn",
+      "variant": "B0-compatible",
+      "repeat": 1,
+      "model_config_hash": "58b80916be9d5f5e5aeed20a2d05690fa4edc9cad5c9784a11bd6dfac0355841",
+      "sop_compliance": null,
+      "termination_reason": "completed",
+      "model_calls": 2,
+      "model_response_count": 2,
+      "model_error_count": 0,
+      "tool_proposed_count": 1,
+      "tool_executed_count": 1,
+      "tool_success_count": 1,
+      "tool_rejected_count": 0,
+      "tool_error_count": 0,
+      "tool_execution_error_count": 0,
+      "tool_protocol_error_count": 0,
+      "tool_reentry_count": 0,
+      "tool_paused_count": 0,
+      "skill_switch_count": 0,
+      "usage_source": "provider",
+      "cost": null,
+      "input_tokens": 1882,
+      "known_input_tokens": 1882,
+      "unknown_input_tokens_calls": 0,
+      "output_tokens": 77,
+      "known_output_tokens": 77,
+      "unknown_output_tokens_calls": 0,
+      "total_tokens": 1959,
+      "known_total_tokens": 1959,
+      "unknown_total_tokens_calls": 0,
+      "sop_invalid_result_count": 0,
+      "sop_rules": {
+        "eligibility_before_refund": {
+          "applicable": 0,
+          "passed": 0
+        }
+      },
+      "latency_ms": 3146.1710296571255,
+      "original_task_success": false,
+      "original_failure_reason": "missing_fact:eta",
+      "original_status": "failed",
+      "original_failure_category": "oracle_failure",
+      "rejudged": {
+        "task_success": true,
+        "failure_reason": null
+      },
+      "protocol_errors": [],
+      "approval_resume_seen": false,
+      "peak_price_calculated_usd": "0.000431208",
+      "off_peak_price_calculated_usd": "0.000215604",
+      "actual_business_state_verified": true,
+      "model_latencies_ms": [
+        1501.8626227974892,
+        1317.0161359012127
+      ],
+      "tool_execution_sequence": [
+        "track_shipment"
+      ]
+    },
+    {
+      "git_sha": "a6efda9813e8453eb5483124ad3ce7a0ff2c3e78",
+      "working_tree_dirty": false,
+      "source_hash": "22b484a85fed63e5febefeb7be564581d049662dbcce2d4248431d1bd51a3c23",
+      "dataset_hash": "4b918f3f720e9010e884e9f18dff149cf18d5a659d3aff90b6838f4bf3131957",
+      "fixture_hash": "246f50b7ad509a1a96046676ca9fe643a40a63f11a1b2c8d20fdf725523147de",
+      "policy_hash": "a39d4544e6a5a1c8eb6da3c8ce1ed190d81e66f4e4509a8192781b3ac273f6bf",
+      "case_id": "refund_small",
+      "variant": "B0-compatible",
+      "repeat": 1,
+      "model_config_hash": "58b80916be9d5f5e5aeed20a2d05690fa4edc9cad5c9784a11bd6dfac0355841",
+      "sop_compliance": true,
+      "termination_reason": "completed",
+      "model_calls": 3,
+      "model_response_count": 3,
+      "model_error_count": 0,
+      "tool_proposed_count": 3,
+      "tool_executed_count": 3,
+      "tool_success_count": 3,
+      "tool_rejected_count": 0,
+      "tool_error_count": 0,
+      "tool_execution_error_count": 0,
+      "tool_protocol_error_count": 0,
+      "tool_reentry_count": 0,
+      "tool_paused_count": 0,
+      "skill_switch_count": 0,
+      "usage_source": "provider",
+      "cost": null,
+      "input_tokens": 3311,
+      "known_input_tokens": 3311,
+      "unknown_input_tokens_calls": 0,
+      "output_tokens": 218,
+      "known_output_tokens": 218,
+      "unknown_output_tokens_calls": 0,
+      "total_tokens": 3529,
+      "known_total_tokens": 3529,
+      "unknown_total_tokens_calls": 0,
+      "sop_invalid_result_count": 0,
+      "sop_rules": {
+        "eligibility_before_refund": {
+          "applicable": 1,
+          "passed": 1
+        }
+      },
+      "latency_ms": 5045.049030333757,
+      "original_task_success": false,
+      "original_failure_reason": "missing_reply_fact",
+      "original_status": "failed",
+      "original_failure_category": "oracle_failure",
+      "rejudged": {
+        "task_success": true,
+        "failure_reason": null
+      },
+      "protocol_errors": [],
+      "approval_resume_seen": false,
+      "peak_price_calculated_usd": "0.000502260",
+      "off_peak_price_calculated_usd": "0.000251130",
+      "actual_business_state_verified": true,
+      "model_latencies_ms": [
+        1688.796628266573,
+        1494.544368237257,
+        1817.06727668643
+      ],
+      "tool_execution_sequence": [
+        "get_order",
+        "check_refund_eligibility",
+        "request_refund"
+      ]
+    },
+    {
+      "git_sha": "a6efda9813e8453eb5483124ad3ce7a0ff2c3e78",
+      "working_tree_dirty": false,
+      "source_hash": "22b484a85fed63e5febefeb7be564581d049662dbcce2d4248431d1bd51a3c23",
+      "dataset_hash": "4b918f3f720e9010e884e9f18dff149cf18d5a659d3aff90b6838f4bf3131957",
+      "fixture_hash": "246f50b7ad509a1a96046676ca9fe643a40a63f11a1b2c8d20fdf725523147de",
+      "policy_hash": "a39d4544e6a5a1c8eb6da3c8ce1ed190d81e66f4e4509a8192781b3ac273f6bf",
+      "case_id": "refund_approved",
+      "variant": "B0-compatible",
+      "repeat": 1,
+      "model_config_hash": "58b80916be9d5f5e5aeed20a2d05690fa4edc9cad5c9784a11bd6dfac0355841",
+      "sop_compliance": true,
+      "termination_reason": "completed",
+      "model_calls": 3,
+      "model_response_count": 3,
+      "model_error_count": 0,
+      "tool_proposed_count": 2,
+      "tool_executed_count": 3,
+      "tool_success_count": 2,
+      "tool_rejected_count": 0,
+      "tool_error_count": 0,
+      "tool_execution_error_count": 0,
+      "tool_protocol_error_count": 0,
+      "tool_reentry_count": 1,
+      "tool_paused_count": 1,
+      "skill_switch_count": 0,
+      "usage_source": "provider",
+      "cost": null,
+      "input_tokens": 3070,
+      "known_input_tokens": 3070,
+      "unknown_input_tokens_calls": 0,
+      "output_tokens": 185,
+      "known_output_tokens": 185,
+      "unknown_output_tokens_calls": 0,
+      "total_tokens": 3255,
+      "known_total_tokens": 3255,
+      "unknown_total_tokens_calls": 0,
+      "sop_invalid_result_count": 0,
+      "sop_rules": {
+        "eligibility_before_refund": {
+          "applicable": 1,
+          "passed": 1
+        }
+      },
+      "latency_ms": 4510.0111328065395,
+      "original_task_success": false,
+      "original_failure_reason": "missing_reply_fact",
+      "original_status": "failed",
+      "original_failure_category": "oracle_failure",
+      "rejudged": {
+        "task_success": true,
+        "failure_reason": null
+      },
+      "protocol_errors": [],
+      "approval_resume_seen": true,
+      "peak_price_calculated_usd": "0.000427992",
+      "off_peak_price_calculated_usd": "0.000213996",
+      "actual_business_state_verified": true,
+      "model_latencies_ms": [
+        1259.779203683138,
+        1661.9974486529827,
+        1527.5221280753613
+      ],
+      "tool_execution_sequence": [
+        "check_refund_eligibility",
+        "request_refund",
+        "request_refund"
+      ]
+    }
+  ],
+  "regression": {
+    "pytest_passed": 91,
+    "pytest_seconds": 6.65,
+    "original_tests_included": 24,
+    "offline_scenarios_passed": 11,
+    "offline_tasks_passed": 7
+  }
+}

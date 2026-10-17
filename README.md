@@ -2,7 +2,7 @@
 
 基于 [nitanandsinghupw/langgraph-support-agent](https://github.com/nitanandsinghupw/langgraph-support-agent) 的轻量单 Agent 电商售后研究项目，沿用 LangGraph、原8个业务工具、政策校验和人工审批。
 
-**当前完成 Stage 1：DeepSeek 非思考适配、Mock 协议验证、Tracing 与任务级评测器。** 真实 DeepSeek 为 `not_run`（未批准调用预算）；Skill Routing、TaskMemory、Context Budget、Planning 尚未实现。Stage 1 交付后等待审查，不自动进入 Stage 2。
+**当前完成 Stage 1：DeepSeek 非思考适配、Mock 协议验证、Tracing 与任务级评测器。** 真实 DeepSeek 已完成一次受限冒烟：8次请求，修正格式匹配后对同一真实轨迹离线复判3/3，详见[在线补充报告](docs/reports/phase_1_live_smoke.md)；Skill Routing、TaskMemory、Context Budget、Planning 尚未实现。Stage 1 交付后等待审查，不自动进入 Stage 2。
 
 ## 来源与版本
 
@@ -94,6 +94,6 @@ skillmem-agent/
 
 每个任务使用独立 Store、临时 SQLite 与会话；输出JSONL/CSV/JSON。当前唯一变体为B0-compatible，保留原有业务行为。以最终订单/退款状态判成功，工具提议与函数真实执行分别计数；usage缺失为null，不用0伪装。
 
-DeepSeek使用环境变量配置，见 [.env.example](.env.example)。默认`deepseek-flash`、Chat Completions、thinking disabled、temperature=0、1024输出Token、60秒超时、不自动重试。`bind_tools`和多轮tool_call_id已由Mock HTTP验证，**尚未获得真实服务端验证**。程序不会自动加载.env或运行付费Smoke。
+DeepSeek使用环境变量配置，见 [.env.example](.env.example)。默认`deepseek-flash`、Chat Completions、thinking disabled、temperature=0、1024输出Token、60秒超时、不自动重试。`bind_tools`、多轮tool_call_id与审批恢复已通过Mock和真实服务端冒烟验证（仅3个合成业务任务，不代表通用成功率）。程序不会自动加载.env或运行付费Smoke。
 
 完整原始轨迹只写Git忽略的`.local/`。当前7个任务属于开发夹具，未来独立Final集尚未冻结；SOP目前仅计量退款前资格查询。协议、计数/Token/审批语义与限制见 [evaluation_protocol.md](docs/evaluation_protocol.md)。

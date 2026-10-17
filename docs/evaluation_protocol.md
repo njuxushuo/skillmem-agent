@@ -1,6 +1,6 @@
 # Stage 1：B0-compatible 测量协议
 
-本阶段实现测量基础设施，**真实 DeepSeek 为 `not_run`**。本轮没有获批付费预算；不读取或使用聊天中曾出现的凭据。离线与 Mock 数字不代表真实模型效果。
+Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留不改。2026-10-17获批一次在线补充验收，8次真实请求成功；原Oracle因日期/币种表示判0/3，通用格式修正后对原轨迹离线复判3/3，未追加API调用。见[在线补充报告](reports/phase_1_live_smoke.md)。离线与Mock数字仍不代表真实模型效果。
 
 ## 版本与边界
 
@@ -25,7 +25,7 @@
 
 新 `--tasks` 路径失败返回退出码1，成功返回0；旧场景入口与其退出码缺陷保持B0不变。CI 使用禁网入口并运行全部测试，无真实 Key。
 
-未来获得预算后，可在环境中设置 `DEEPSEEK_API_KEY` 并显式选择 `--provider deepseek`。该命令会产生费用；本阶段未运行它。程序不会自动加载 `.env`，不会自动运行 smoke。
+通用 `--provider deepseek` 入口会产生费用，本身不提供本次的美元预算保证。本次真实验收使用 `scripts/run_live_smoke.py` 的独立受限HTTP transport：15次/2美元双上限，已完成且持久化账本拒绝重复执行。仅该脚本支持显式 `--env-file`；程序不会自动加载 `.env` 或自动运行付费 smoke。
 
 ## DeepSeek 配置与兼容约定
 
@@ -43,7 +43,7 @@
 
 固定 `extra_body.thinking.type=disabled`、非流式、Chat Completions（`use_responses_api=False`），不加 strict schema/parallel_tool_calls 参数。`bind_tools` 转换工具 schema，`ToolNode` 保留 `tool_call_id`。当前库的ChatOpenAI子类会将max_tokens编码为OpenAI专属的max_completion_tokens；DeepSeek分支使用BaseChatOpenAI保留官方max_tokens字段，Mock严格断言不存在max_completion_tokens。依赖精确锁定；升级时必须重测工具绑定与请求字段。
 
-2026-10-17 只读核对官方 [Tool Calls](https://api-docs.deepseek.com/guides/tool_calls) 、[Thinking Mode](https://api-docs.deepseek.com/guides/thinking_mode) 和 [Chat Completions](https://api-docs.deepseek.com/api/create-chat-completion)：示例使用 `deepseek-flash` 与显式关闭 thinking。模型可用性和账户权限未验证。将来开启思考模式需重新解决 `reasoning_content` 回传，不能只改一个环境变量。
+2026-10-17 只读核对官方 [Tool Calls](https://api-docs.deepseek.com/guides/tool_calls) 、[Thinking Mode](https://api-docs.deepseek.com/guides/thinking_mode) 和 [Chat Completions](https://api-docs.deepseek.com/api/create-chat-completion)：示例使用 `deepseek-flash` 与显式关闭 thinking。本次已用该模型完成真实冒烟；可用性只代表本次账户与时间。将来开启思考模式需重新解决 `reasoning_content` 回传，不能只改一个环境变量。
 
 默认不重试便于计量；如果配置 SDK retries > 0，`model_calls` 是 **LangChain 逻辑调用数**，不等于每次 HTTP 尝试数；可能付费但未获得 usage 的请求仍 unknown。工具无自动重试逻辑；模型重新提议或审批重入照实记录。
 
@@ -66,9 +66,9 @@
 | 退款审批 | 1001退款89.00，脚本实际消费了同订单同金额、相同reviewer的批准 | 未批准、错误金额或订单、未消费审批、拒绝后仍产生退款 |
 | 取消/正确拒绝 cancel/refusal | 1004被取消且无额外变更；1002被拒且正确说明已发货、状态不变 | 未取消却说完成、拒绝时退款、理由缺失、其他状态变化 |
 
-必要信息当前用固定业务字段/短语匹配；这是可复现的受限 Oracle，不能完整识别否定句、矛盾回答或所有同义表达。适用于这些明确的开发夹具，不能宣称通用语义评判。Stage 5 冻结任务前须扩展分层规则/审查误判。
+必要信息当前用固定业务字段/短语匹配，`reply_fact_present`额外识别EUR/€和有效英文日期与ISO日期的等价形式，错误币种/日期仍拒绝；这是可复现的受限 Oracle，不能完整识别否定句、矛盾回答或所有同义表达。适用于这些明确的开发夹具，不能宣称通用语义评判。Stage 5 冻结任务前须扩展分层规则/审查误判。
 
-`evaluation.sop_checks` 当前仅测软 SOP **退款提议前，同订单存在成功资格查询**。适用分母为有退款提议的任务，单任务内每次退款提议均计检查；不适用为null。它与 Task Success 分开：B0允许直接合法退款，业务成功但 SOP=false。此指标不等于完整业务安全或未来四 Skill SOP 的合规率。
+`evaluation.sop_checks` 当前仅测软 SOP **退款提议前，同订单存在成功资格查询**。适用分母为有退款提议的任务，单任务内每次退款提议均计检查；不适用为null。非JSON/非对象资格结果不崩溃、不视作合格，只有`eligible is True`可作为证据，异常结果另计`sop_invalid_result_count`。它与 Task Success 分开：B0允许直接合法退款，业务成功但 SOP=false。此指标不等于完整业务安全或未来四 Skill SOP 的合规率。
 
 ## Trace 与计量
 
@@ -82,7 +82,7 @@
 
 计数定义：proposed为模型提议数，executed为真实函数入口数，success为非拒绝正常返回数，rejected为业务拒绝，execution_error为函数异常，protocol_error为错误ToolMessage，paused为审批暂停，reentry为重复call_id的函数入口。各错误维度可能重叠，不可简单相加。审批恢复进入相同函数是实际工作，应计入 executed/reentry；不等于新增退款。退款成功以 Store 为准。
 
-Usage 优先取 `AIMessage.usage_metadata`，保留 `response_metadata.token_usage`；原始字段缺失时覆盖SDK的补零，输出null。每个字段仅在所有逻辑请求都获得该字段时汇总总量，否则null；`known_*`是已知小计、`unknown_*_calls`为缺失数。0只有服务端明确返回该字段0时有效。缓存hit/miss保留原始字段，**不额外加到prompt_tokens**。成本暂为null，未引入未经验证的价格。
+Usage 优先取 `AIMessage.usage_metadata`，保留 `response_metadata.token_usage`；原始字段缺失时覆盖SDK的补零，输出null。每个字段仅在所有逻辑请求都获得该字段时汇总总量，否则null；`known_*`是已知小计、`unknown_*_calls`为缺失数。0只有服务端明确返回该字段0时有效。缓存hit/miss保留原始字段，**不额外加到prompt_tokens**。通用runner成本仍为null；受限smoke账本单独按已核对价格给费用上界和缓存感知计价，实际账单未知仍null。
 
 结果输出 `summary.json/results.jsonl/results.csv`；统计包含所有任务，失败不删除。Token总数若任一任务unknown则为null。offline与mock的成功率仅验证软件协议，不是 DeepSeek 效果。
 
@@ -93,3 +93,5 @@ Usage 优先取 `AIMessage.usage_metadata`，保留 `response_metadata.token_usa
 Key、authorization等字段和常见凭据格式脱敏，runner显式注册当前模型密钥以清除错误消息中的精确值；不记录请求头。**这不是通用PII匿名化工具**：完整对话、业务快照仍只能留在Git忽略的本地目录。GitHub仅提交人工审查的合成夹具摘要。
 
 日志写入失败不改变业务结果或重放工具，runner将该测量标记error。无法建立输出目录等基础设施错误直接失败。业务Store仍内存、审批先领取后resume、同thread并发和多interrupt等风险属于Stage 2，均未提前修复。
+
+真实API状态由`deepseek_api_status`判定：无调用not_run、尝试后无成功响应failed、部分响应/错误partial_failure、全部收到响应api_succeeded。API成功与Task Success独立；失败分类区分api_error、budget_limit、model_decision_failure、oracle_failure、setup_error与measurement_error。Mock/offline不得标成真实成功。

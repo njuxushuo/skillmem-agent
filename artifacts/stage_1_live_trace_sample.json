@@ -1,0 +1,702 @@
+{
+  "source": "real_deepseek_api",
+  "case": "refund_approved",
+  "projection": "All 30 lifecycle events retained. IDs aliased; unrelated business rows and system text omitted. Message/tool/result content and real usage retained. This is not a raw trace.",
+  "original_trace_sha256": "6e72626dfd5115cabbdd7b4fb75cc75dfeaa9002c91d472a8c5cd44ab38e5fdc",
+  "offline_rejudgment": {
+    "task_success": true,
+    "failure_reason": null
+  },
+  "events": [
+    {
+      "step": 1,
+      "time": "2026-10-17T12:15:12.759105+00:00",
+      "event": "task.start",
+      "business_before": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "0"
+        },
+        "refunds": [],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      },
+      "model_config": {
+        "type": "openai-chat",
+        "model": "deepseek-flash",
+        "base_url": "https://api.deepseek.com",
+        "temperature": 0.0,
+        "max_tokens": 1024,
+        "timeout": 60.0,
+        "retries": 0,
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "case_id": "refund_approved",
+      "source_commit": "a6efda9813e8453eb5483124ad3ce7a0ff2c3e78"
+    },
+    {
+      "step": 2,
+      "time": "2026-10-17T12:15:12.759538+00:00",
+      "event": "action.user",
+      "content": "Refund order ORDER-A, damaged",
+      "business_before": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "0"
+        },
+        "refunds": [],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      }
+    },
+    {
+      "step": 3,
+      "time": "2026-10-17T12:15:12.764499+00:00",
+      "event": "model.request",
+      "call_id": "MODEL-1",
+      "parameters": {
+        "model": "deepseek-flash",
+        "stream": false,
+        "max_tokens": 1024,
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        },
+        "temperature": 0.0,
+        "stop": null
+      },
+      "bound_tools": [
+        "list_my_orders",
+        "get_order",
+        "track_shipment",
+        "check_refund_eligibility",
+        "request_refund",
+        "cancel_order",
+        "search_policies",
+        "escalate_to_human"
+      ],
+      "messages": [
+        [
+          {
+            "type": "system",
+            "content": "[original unchanged B0 system prompt; see graph.py]"
+          },
+          {
+            "type": "human",
+            "content": "Refund order ORDER-A, damaged",
+            "name": null
+          }
+        ]
+      ]
+    },
+    {
+      "step": 4,
+      "time": "2026-10-17T12:15:14.024259+00:00",
+      "event": "model.response",
+      "call_id": "MODEL-1",
+      "usage": {
+        "input_tokens": 888,
+        "output_tokens": 50,
+        "total_tokens": 938,
+        "raw": {
+          "completion_tokens": 50,
+          "prompt_tokens": 888,
+          "total_tokens": 938,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 640,
+            "image_tokens": null,
+            "text_tokens": null
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 248
+        },
+        "normalized": {
+          "input_tokens": 888,
+          "output_tokens": 50,
+          "total_tokens": 938,
+          "input_token_details": {
+            "cache_read": 640
+          },
+          "output_token_details": {}
+        }
+      },
+      "usage_source": "provider",
+      "latency_ms": 1259.779203683138,
+      "message": {
+        "type": "ai",
+        "content": "I'll check that order for you.",
+        "name": null,
+        "tool_calls": [
+          {
+            "name": "check_refund_eligibility",
+            "args": {
+              "order_id": "ORDER-A"
+            },
+            "id": "TOOL-1",
+            "type": "tool_call"
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    },
+    {
+      "step": 5,
+      "time": "2026-10-17T12:15:14.024673+00:00",
+      "event": "tool.proposed",
+      "tool_call_id": "TOOL-1",
+      "tool_name": "check_refund_eligibility",
+      "args": {
+        "order_id": "ORDER-A"
+      },
+      "protocol_valid": true
+    },
+    {
+      "step": 6,
+      "time": "2026-10-17T12:15:14.027777+00:00",
+      "event": "tool.attempt",
+      "invocation_id": "INVOCATION-1",
+      "tool_call_id": "TOOL-1",
+      "tool_name": "check_refund_eligibility"
+    },
+    {
+      "step": 7,
+      "time": "2026-10-17T12:15:14.028856+00:00",
+      "event": "tool.execution_start",
+      "invocation_id": "INVOCATION-1",
+      "tool_call_id": "TOOL-1",
+      "tool_name": "check_refund_eligibility"
+    },
+    {
+      "step": 8,
+      "time": "2026-10-17T12:15:14.029112+00:00",
+      "event": "tool.execution_end",
+      "invocation_id": "INVOCATION-1",
+      "tool_call_id": "TOOL-1",
+      "tool_name": "check_refund_eligibility",
+      "outcome": "success",
+      "result": "{\"order_id\": \"ORDER-A\", \"item\": \"Aero commuter helmet\", \"eligible\": true, \"reason\": \"Delivered 11 days ago, within the 30-day window.\", \"max_amount\": \"89.00\", \"currency\": \"EUR\", \"needs_human_approval\": true}"
+    },
+    {
+      "step": 9,
+      "time": "2026-10-17T12:15:14.029325+00:00",
+      "event": "tool.return",
+      "invocation_id": "INVOCATION-1",
+      "tool_call_id": "TOOL-1",
+      "latency_ms": 1.5735812485218048
+    },
+    {
+      "step": 10,
+      "time": "2026-10-17T12:15:14.029768+00:00",
+      "event": "tool.observation",
+      "tool_call_id": "TOOL-1",
+      "tool_name": "check_refund_eligibility",
+      "status": "success",
+      "result": "{\"order_id\": \"ORDER-A\", \"item\": \"Aero commuter helmet\", \"eligible\": true, \"reason\": \"Delivered 11 days ago, within the 30-day window.\", \"max_amount\": \"89.00\", \"currency\": \"EUR\", \"needs_human_approval\": true}"
+    },
+    {
+      "step": 11,
+      "time": "2026-10-17T12:15:14.031100+00:00",
+      "event": "model.request",
+      "call_id": "MODEL-2",
+      "parameters": {
+        "model": "deepseek-flash",
+        "stream": false,
+        "max_tokens": 1024,
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        },
+        "temperature": 0.0,
+        "stop": null
+      },
+      "bound_tools": [
+        "list_my_orders",
+        "get_order",
+        "track_shipment",
+        "check_refund_eligibility",
+        "request_refund",
+        "cancel_order",
+        "search_policies",
+        "escalate_to_human"
+      ],
+      "messages": [
+        [
+          {
+            "type": "system",
+            "content": "[original unchanged B0 system prompt; see graph.py]"
+          },
+          {
+            "type": "human",
+            "content": "Refund order ORDER-A, damaged",
+            "name": null
+          },
+          {
+            "type": "ai",
+            "content": "I'll check that order for you.",
+            "name": null,
+            "tool_calls": [
+              {
+                "name": "check_refund_eligibility",
+                "args": {
+                  "order_id": "ORDER-A"
+                },
+                "id": "TOOL-1",
+                "type": "tool_call"
+              }
+            ]
+          },
+          {
+            "type": "tool",
+            "content": "{\"order_id\": \"ORDER-A\", \"item\": \"Aero commuter helmet\", \"eligible\": true, \"reason\": \"Delivered 11 days ago, within the 30-day window.\", \"max_amount\": \"89.00\", \"currency\": \"EUR\", \"needs_human_approval\": true}",
+            "name": "check_refund_eligibility",
+            "tool_call_id": "TOOL-1",
+            "status": "success"
+          }
+        ]
+      ]
+    },
+    {
+      "step": 12,
+      "time": "2026-10-17T12:15:15.693042+00:00",
+      "event": "model.response",
+      "call_id": "MODEL-2",
+      "usage": {
+        "input_tokens": 1016,
+        "output_tokens": 76,
+        "total_tokens": 1092,
+        "raw": {
+          "completion_tokens": 76,
+          "prompt_tokens": 1016,
+          "total_tokens": 1092,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 768,
+            "image_tokens": null,
+            "text_tokens": null
+          },
+          "prompt_cache_hit_tokens": 768,
+          "prompt_cache_miss_tokens": 248
+        },
+        "normalized": {
+          "input_tokens": 1016,
+          "output_tokens": 76,
+          "total_tokens": 1092,
+          "input_token_details": {
+            "cache_read": 768
+          },
+          "output_token_details": {}
+        }
+      },
+      "usage_source": "provider",
+      "latency_ms": 1661.9974486529827,
+      "message": {
+        "type": "ai",
+        "content": "",
+        "name": null,
+        "tool_calls": [
+          {
+            "name": "request_refund",
+            "args": {
+              "order_id": "ORDER-A",
+              "amount": 89.0,
+              "reason": "Damaged item"
+            },
+            "id": "TOOL-2",
+            "type": "tool_call"
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    },
+    {
+      "step": 13,
+      "time": "2026-10-17T12:15:15.693462+00:00",
+      "event": "tool.proposed",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund",
+      "args": {
+        "order_id": "ORDER-A",
+        "amount": 89.0,
+        "reason": "Damaged item"
+      },
+      "protocol_valid": true
+    },
+    {
+      "step": 14,
+      "time": "2026-10-17T12:15:15.696341+00:00",
+      "event": "tool.attempt",
+      "invocation_id": "INVOCATION-2",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund"
+    },
+    {
+      "step": 15,
+      "time": "2026-10-17T12:15:15.698264+00:00",
+      "event": "tool.execution_start",
+      "invocation_id": "INVOCATION-2",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund"
+    },
+    {
+      "step": 16,
+      "time": "2026-10-17T12:15:15.698568+00:00",
+      "event": "tool.paused",
+      "invocation_id": "INVOCATION-2",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund"
+    },
+    {
+      "step": 17,
+      "time": "2026-10-17T12:15:15.698769+00:00",
+      "event": "tool.interrupt",
+      "invocation_id": "INVOCATION-2",
+      "error": "GraphInterrupt",
+      "latency_ms": 2.437364310026169
+    },
+    {
+      "step": 18,
+      "time": "2026-10-17T12:15:15.702104+00:00",
+      "event": "action.result",
+      "business_after": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "0"
+        },
+        "refunds": [],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      },
+      "result": {
+        "thread_id": "THREAD-1",
+        "status": "awaiting_approval",
+        "reply": "I've asked a colleague to approve a refund of 89.00 EUR for order ORDER-A. You'll get an answer here shortly.",
+        "tools_used": [
+          "check_refund_eligibility",
+          "request_refund"
+        ],
+        "approval": {
+          "type": "refund_approval",
+          "customer_id": "CUSTOMER-A",
+          "order_id": "ORDER-A",
+          "item": "Aero commuter helmet",
+          "amount": "89.00",
+          "currency": "EUR",
+          "reason": "Damaged item"
+        }
+      }
+    },
+    {
+      "step": 19,
+      "time": "2026-10-17T12:15:15.702310+00:00",
+      "event": "graph.interrupt",
+      "details": {
+        "type": "refund_approval",
+        "customer_id": "CUSTOMER-A",
+        "order_id": "ORDER-A",
+        "item": "Aero commuter helmet",
+        "amount": "89.00",
+        "currency": "EUR",
+        "reason": "Damaged item"
+      }
+    },
+    {
+      "step": 20,
+      "time": "2026-10-17T12:15:15.702462+00:00",
+      "event": "graph.resume",
+      "decision": {
+        "approved": true,
+        "reviewer": "REVIEWER-A",
+        "note": null
+      },
+      "business_before": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "0"
+        },
+        "refunds": [],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      }
+    },
+    {
+      "step": 21,
+      "time": "2026-10-17T12:15:15.704910+00:00",
+      "event": "tool.attempt",
+      "invocation_id": "INVOCATION-3",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund"
+    },
+    {
+      "step": 22,
+      "time": "2026-10-17T12:15:15.705756+00:00",
+      "event": "tool.execution_start",
+      "invocation_id": "INVOCATION-3",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund"
+    },
+    {
+      "step": 23,
+      "time": "2026-10-17T12:15:15.706116+00:00",
+      "event": "tool.execution_end",
+      "invocation_id": "INVOCATION-3",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund",
+      "outcome": "success",
+      "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-A\", \"amount\": \"89.00\", \"currency\": \"EUR\", \"approved_by\": \"REVIEWER-A\", \"arrives\": \"within 5 working days\"}"
+    },
+    {
+      "step": 24,
+      "time": "2026-10-17T12:15:15.706301+00:00",
+      "event": "tool.return",
+      "invocation_id": "INVOCATION-3",
+      "tool_call_id": "TOOL-2",
+      "latency_ms": 1.398630440235138
+    },
+    {
+      "step": 25,
+      "time": "2026-10-17T12:15:15.706556+00:00",
+      "event": "tool.observation",
+      "tool_call_id": "TOOL-2",
+      "tool_name": "request_refund",
+      "status": "success",
+      "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-A\", \"amount\": \"89.00\", \"currency\": \"EUR\", \"approved_by\": \"REVIEWER-A\", \"arrives\": \"within 5 working days\"}"
+    },
+    {
+      "step": 26,
+      "time": "2026-10-17T12:15:15.708441+00:00",
+      "event": "model.request",
+      "call_id": "MODEL-3",
+      "parameters": {
+        "model": "deepseek-flash",
+        "stream": false,
+        "max_tokens": 1024,
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        },
+        "temperature": 0.0,
+        "stop": null
+      },
+      "bound_tools": [
+        "list_my_orders",
+        "get_order",
+        "track_shipment",
+        "check_refund_eligibility",
+        "request_refund",
+        "cancel_order",
+        "search_policies",
+        "escalate_to_human"
+      ],
+      "messages": [
+        [
+          {
+            "type": "system",
+            "content": "[original unchanged B0 system prompt; see graph.py]"
+          },
+          {
+            "type": "human",
+            "content": "Refund order ORDER-A, damaged",
+            "name": null
+          },
+          {
+            "type": "ai",
+            "content": "I'll check that order for you.",
+            "name": null,
+            "tool_calls": [
+              {
+                "name": "check_refund_eligibility",
+                "args": {
+                  "order_id": "ORDER-A"
+                },
+                "id": "TOOL-1",
+                "type": "tool_call"
+              }
+            ]
+          },
+          {
+            "type": "tool",
+            "content": "{\"order_id\": \"ORDER-A\", \"item\": \"Aero commuter helmet\", \"eligible\": true, \"reason\": \"Delivered 11 days ago, within the 30-day window.\", \"max_amount\": \"89.00\", \"currency\": \"EUR\", \"needs_human_approval\": true}",
+            "name": "check_refund_eligibility",
+            "tool_call_id": "TOOL-1",
+            "status": "success"
+          },
+          {
+            "type": "ai",
+            "content": "",
+            "name": null,
+            "tool_calls": [
+              {
+                "name": "request_refund",
+                "args": {
+                  "order_id": "ORDER-A",
+                  "amount": 89.0,
+                  "reason": "Damaged item"
+                },
+                "id": "TOOL-2",
+                "type": "tool_call"
+              }
+            ]
+          },
+          {
+            "type": "tool",
+            "content": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-A\", \"amount\": \"89.00\", \"currency\": \"EUR\", \"approved_by\": \"REVIEWER-A\", \"arrives\": \"within 5 working days\"}",
+            "name": "request_refund",
+            "tool_call_id": "TOOL-2",
+            "status": "success"
+          }
+        ]
+      ]
+    },
+    {
+      "step": 27,
+      "time": "2026-10-17T12:15:17.235894+00:00",
+      "event": "model.response",
+      "call_id": "MODEL-3",
+      "usage": {
+        "input_tokens": 1166,
+        "output_tokens": 59,
+        "total_tokens": 1225,
+        "raw": {
+          "completion_tokens": 59,
+          "prompt_tokens": 1166,
+          "total_tokens": 1225,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": {
+            "audio_tokens": null,
+            "cache_write_tokens": null,
+            "cached_tokens": 1024,
+            "image_tokens": null,
+            "text_tokens": null
+          },
+          "prompt_cache_hit_tokens": 1024,
+          "prompt_cache_miss_tokens": 142
+        },
+        "normalized": {
+          "input_tokens": 1166,
+          "output_tokens": 59,
+          "total_tokens": 1225,
+          "input_token_details": {
+            "cache_read": 1024
+          },
+          "output_token_details": {}
+        }
+      },
+      "usage_source": "provider",
+      "latency_ms": 1527.5221280753613,
+      "message": {
+        "type": "ai",
+        "content": "Done! I've refunded the full €89.00 for order ORDER-A (Aero commuter helmet) to your original payment method. It should arrive within 5 working days. Reference: REFUND-A.\n\nSorry about the damaged helmet — anything else I can help with?",
+        "name": null,
+        "tool_calls": []
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "step": 28,
+      "time": "2026-10-17T12:15:17.240327+00:00",
+      "event": "action.result",
+      "business_after": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "89.00"
+        },
+        "refunds": [
+          {
+            "id": "REFUND-A",
+            "order_id": "ORDER-A",
+            "amount": "89.00",
+            "reason": "Damaged item",
+            "approved_by": "REVIEWER-A"
+          }
+        ],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      },
+      "result": {
+        "thread_id": "THREAD-1",
+        "status": "answered",
+        "reply": "Done! I've refunded the full €89.00 for order ORDER-A (Aero commuter helmet) to your original payment method. It should arrive within 5 working days. Reference: REFUND-A.\n\nSorry about the damaged helmet — anything else I can help with?",
+        "tools_used": [],
+        "approval": null
+      }
+    },
+    {
+      "step": 29,
+      "time": "2026-10-17T12:15:17.241293+00:00",
+      "event": "task.state",
+      "business_before": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "0"
+        },
+        "refunds": [],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      },
+      "business_after": {
+        "order": {
+          "id": "ORDER-A",
+          "status": "delivered",
+          "total": "89.00",
+          "currency": "EUR",
+          "refunded": "89.00"
+        },
+        "refunds": [
+          {
+            "id": "REFUND-A",
+            "order_id": "ORDER-A",
+            "amount": "89.00",
+            "reason": "Damaged item",
+            "approved_by": "REVIEWER-A"
+          }
+        ],
+        "tickets": [],
+        "other_orders": "omitted from public projection; compared by full-state oracle"
+      },
+      "pending": []
+    },
+    {
+      "step": 30,
+      "time": "2026-10-17T12:15:17.243363+00:00",
+      "event": "task.end",
+      "stop_reason": "completed",
+      "original_oracle_result": {
+        "status": "failed",
+        "task_success": false,
+        "failure_reason": "missing_reply_fact",
+        "failure_category": "oracle_failure",
+        "termination_reason": "completed"
+      }
+    }
+  ]
+}

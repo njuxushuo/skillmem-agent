@@ -1,0 +1,1403 @@
+{
+  "description": "All lifecycle event steps retained as redacted projections. Synthetic business fixtures; offline or scripted Mock models. No paid APIs. Raw messages and unrelated orders omitted.",
+  "traces": [
+    {
+      "case": "refund_small",
+      "source": "offline",
+      "raw_trace_sha256": "3c912d5ec68020f823722a797ebc778c1ed515f98da37ddd1ad06b5964c06832",
+      "event_count": 23,
+      "events": [
+        {
+          "step": 1,
+          "time": "2026-10-17T14:21:02.078282+00:00",
+          "event": "task.start",
+          "business_before": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "case_id": "refund_small",
+          "variant": "B1",
+          "model_config": {
+            "type": "offline-support-model",
+            "model": null,
+            "base_url": null,
+            "temperature": null,
+            "max_tokens": null,
+            "timeout": null,
+            "retries": null,
+            "extra_body": null
+          },
+          "execution_limits": {
+            "model_calls": 8,
+            "tool_calls": 8,
+            "turn_seconds": 120,
+            "tool_seconds": 5
+          },
+          "source_commit": "ba40a8b3d363b19e128f12c08e13752b7eaa8d48"
+        },
+        {
+          "step": 2,
+          "time": "2026-10-17T14:21:02.078635+00:00",
+          "event": "action.user",
+          "business_before": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "content": "Refund order ORDER-SMALL, it arrived broken"
+        },
+        {
+          "step": 3,
+          "time": "2026-10-17T14:21:02.081970+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-1",
+          "message_roles": [
+            [
+              "system",
+              "human"
+            ]
+          ],
+          "tool_message_ids": [],
+          "tools_bound": []
+        },
+        {
+          "step": 4,
+          "time": "2026-10-17T14:21:02.082196+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-1",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "offline",
+          "latency_ms": 0.2419985830783844,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "check_refund_eligibility",
+              "args": {
+                "order_id": "ORDER-SMALL"
+              },
+              "id": "CALL-1",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "time": "2026-10-17T14:21:02.082271+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "args": {
+            "order_id": "ORDER-SMALL"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 6,
+          "time": "2026-10-17T14:21:02.085864+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility"
+        },
+        {
+          "step": 7,
+          "time": "2026-10-17T14:21:02.086584+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility"
+        },
+        {
+          "step": 8,
+          "time": "2026-10-17T14:21:02.087268+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "outcome": "success",
+          "result": "{\"order_id\": \"ORDER-SMALL\", \"item\": \"Bottle cage\", \"eligible\": true, \"reason\": \"Delivered 9 days ago, within the 30-day window.\", \"max_amount\": \"18.00\", \"currency\": \"EUR\", \"needs_human_approval\": false}"
+        },
+        {
+          "step": 9,
+          "time": "2026-10-17T14:21:02.087558+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "latency_ms": 1.7008595168590546
+        },
+        {
+          "step": 10,
+          "time": "2026-10-17T14:21:02.087950+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "status": "success",
+          "result": "{\"order_id\": \"ORDER-SMALL\", \"item\": \"Bottle cage\", \"eligible\": true, \"reason\": \"Delivered 9 days ago, within the 30-day window.\", \"max_amount\": \"18.00\", \"currency\": \"EUR\", \"needs_human_approval\": false}"
+        },
+        {
+          "step": 11,
+          "time": "2026-10-17T14:21:02.089150+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-2",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 12,
+          "time": "2026-10-17T14:21:02.089444+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-2",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "offline",
+          "latency_ms": 0.3222227096557617,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "request_refund",
+              "args": {
+                "order_id": "ORDER-SMALL",
+                "amount": 18.0,
+                "reason": "Refund order ORDER-SMALL, it arrived broken"
+              },
+              "id": "CALL-2",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 13,
+          "time": "2026-10-17T14:21:02.089527+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "args": {
+            "order_id": "ORDER-SMALL",
+            "amount": 18.0,
+            "reason": "Refund order ORDER-SMALL, it arrived broken"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 14,
+          "time": "2026-10-17T14:21:02.092564+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 15,
+          "time": "2026-10-17T14:21:02.093211+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 16,
+          "time": "2026-10-17T14:21:02.095176+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "outcome": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-SMALL\", \"amount\": \"18.00\", \"currency\": \"EUR\", \"approved_by\": \"policy\", \"arrives\": \"within 5 working days\"}"
+        },
+        {
+          "step": 17,
+          "time": "2026-10-17T14:21:02.095270+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "latency_ms": 2.713572233915329
+        },
+        {
+          "step": 18,
+          "time": "2026-10-17T14:21:02.095532+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "status": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-SMALL\", \"amount\": \"18.00\", \"currency\": \"EUR\", \"approved_by\": \"policy\", \"arrives\": \"within 5 working days\"}"
+        },
+        {
+          "step": 19,
+          "time": "2026-10-17T14:21:02.096676+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-3",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1",
+            "CALL-2"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 20,
+          "time": "2026-10-17T14:21:02.097003+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-3",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "offline",
+          "latency_ms": 0.3607124090194702,
+          "content": "Done: I've refunded 18.00 EUR for order ORDER-SMALL (refund REFUND-A). It will arrive within 5 working days.",
+          "tool_calls": []
+        },
+        {
+          "step": 21,
+          "time": "2026-10-17T14:21:02.099849+00:00",
+          "event": "action.result",
+          "business_after": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "18.00"
+            },
+            "refunds": [
+              {
+                "id": "REFUND-A",
+                "order_id": "ORDER-SMALL",
+                "amount": "18.00",
+                "reason": "Refund order ORDER-SMALL, it arrived broken",
+                "approved_by": "policy"
+              }
+            ],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "result": {
+            "thread_id": "THREAD-1",
+            "status": "answered",
+            "reply": "Done: I've refunded 18.00 EUR for order ORDER-SMALL (refund REFUND-A). It will arrive within 5 working days.",
+            "tools_used": [
+              "check_refund_eligibility",
+              "request_refund"
+            ],
+            "approval": null
+          }
+        },
+        {
+          "step": 22,
+          "time": "2026-10-17T14:21:02.100633+00:00",
+          "event": "task.state",
+          "business_before": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "business_after": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "18.00"
+            },
+            "refunds": [
+              {
+                "id": "REFUND-A",
+                "order_id": "ORDER-SMALL",
+                "amount": "18.00",
+                "reason": "Refund order ORDER-SMALL, it arrived broken",
+                "approved_by": "policy"
+              }
+            ],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "pending": []
+        },
+        {
+          "step": 23,
+          "time": "2026-10-17T14:21:02.102008+00:00",
+          "event": "task.end",
+          "stop_reason": "completed",
+          "result": {
+            "status": "passed",
+            "task_success": true,
+            "failure_reason": null,
+            "termination_reason": "completed",
+            "model_calls": 3,
+            "tool_proposed_count": 2,
+            "tool_executed_count": 2,
+            "tool_idempotent_replay_count": 0,
+            "input_tokens": null,
+            "output_tokens": null
+          }
+        }
+      ]
+    },
+    {
+      "case": "refund_approved",
+      "source": "offline",
+      "raw_trace_sha256": "1866921a91b7b9e4620ce21c6c9da8ebc0ddfdbd4180e66a4306a40745556524",
+      "event_count": 32,
+      "events": [
+        {
+          "step": 1,
+          "time": "2026-10-17T14:21:02.122000+00:00",
+          "event": "task.start",
+          "business_before": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "case_id": "refund_approved",
+          "variant": "B1",
+          "model_config": {
+            "type": "offline-support-model",
+            "model": null,
+            "base_url": null,
+            "temperature": null,
+            "max_tokens": null,
+            "timeout": null,
+            "retries": null,
+            "extra_body": null
+          },
+          "execution_limits": {
+            "model_calls": 8,
+            "tool_calls": 8,
+            "turn_seconds": 120,
+            "tool_seconds": 5
+          },
+          "source_commit": "ba40a8b3d363b19e128f12c08e13752b7eaa8d48"
+        },
+        {
+          "step": 2,
+          "time": "2026-10-17T14:21:02.122367+00:00",
+          "event": "action.user",
+          "business_before": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "content": "Refund order ORDER-LARGE, damaged"
+        },
+        {
+          "step": 3,
+          "time": "2026-10-17T14:21:02.126480+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-1",
+          "message_roles": [
+            [
+              "system",
+              "human"
+            ]
+          ],
+          "tool_message_ids": [],
+          "tools_bound": []
+        },
+        {
+          "step": 4,
+          "time": "2026-10-17T14:21:02.126706+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-1",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "offline",
+          "latency_ms": 0.2418309450149536,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "check_refund_eligibility",
+              "args": {
+                "order_id": "ORDER-LARGE"
+              },
+              "id": "CALL-1",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "time": "2026-10-17T14:21:02.126784+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "args": {
+            "order_id": "ORDER-LARGE"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 6,
+          "time": "2026-10-17T14:21:02.132088+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility"
+        },
+        {
+          "step": 7,
+          "time": "2026-10-17T14:21:02.132770+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility"
+        },
+        {
+          "step": 8,
+          "time": "2026-10-17T14:21:02.133351+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "outcome": "success",
+          "result": "{\"order_id\": \"ORDER-LARGE\", \"item\": \"Aero commuter helmet\", \"eligible\": true, \"reason\": \"Delivered 11 days ago, within the 30-day window.\", \"max_amount\": \"89.00\", \"currency\": \"EUR\", \"needs_human_approval\": true}"
+        },
+        {
+          "step": 9,
+          "time": "2026-10-17T14:21:02.133581+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "latency_ms": 1.5000328421592712
+        },
+        {
+          "step": 10,
+          "time": "2026-10-17T14:21:02.133951+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "status": "success",
+          "result": "{\"order_id\": \"ORDER-LARGE\", \"item\": \"Aero commuter helmet\", \"eligible\": true, \"reason\": \"Delivered 11 days ago, within the 30-day window.\", \"max_amount\": \"89.00\", \"currency\": \"EUR\", \"needs_human_approval\": true}"
+        },
+        {
+          "step": 11,
+          "time": "2026-10-17T14:21:02.135146+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-2",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 12,
+          "time": "2026-10-17T14:21:02.135434+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-2",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "offline",
+          "latency_ms": 0.3139972686767578,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "request_refund",
+              "args": {
+                "order_id": "ORDER-LARGE",
+                "amount": 89.0,
+                "reason": "Refund order ORDER-LARGE, damaged"
+              },
+              "id": "CALL-2",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 13,
+          "time": "2026-10-17T14:21:02.135524+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "args": {
+            "order_id": "ORDER-LARGE",
+            "amount": 89.0,
+            "reason": "Refund order ORDER-LARGE, damaged"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 14,
+          "time": "2026-10-17T14:21:02.138874+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 15,
+          "time": "2026-10-17T14:21:02.139696+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 16,
+          "time": "2026-10-17T14:21:02.141567+00:00",
+          "event": "tool.paused",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 17,
+          "time": "2026-10-17T14:21:02.141767+00:00",
+          "event": "tool.interrupt",
+          "invocation_id": "INVOCATION-2",
+          "error": "GraphInterrupt",
+          "latency_ms": 2.900298684835434
+        },
+        {
+          "step": 18,
+          "time": "2026-10-17T14:21:02.144639+00:00",
+          "event": "action.result",
+          "business_after": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "result": {
+            "thread_id": "THREAD-1",
+            "status": "awaiting_approval",
+            "reply": "I've asked a colleague to approve a refund of 89.00 EUR for order ORDER-LARGE. You'll get an answer here shortly.",
+            "tools_used": [
+              "check_refund_eligibility",
+              "request_refund"
+            ],
+            "approval": {
+              "type": "refund_approval",
+              "customer_id": "CUSTOMER-A",
+              "order_id": "ORDER-LARGE",
+              "item": "Aero commuter helmet",
+              "amount": "89.00",
+              "currency": "EUR",
+              "reason": "Refund order ORDER-LARGE, damaged",
+              "approval_id": "APPROVAL-1"
+            }
+          }
+        },
+        {
+          "step": 19,
+          "time": "2026-10-17T14:21:02.145124+00:00",
+          "event": "graph.interrupt",
+          "details": {
+            "type": "refund_approval",
+            "customer_id": "CUSTOMER-A",
+            "order_id": "ORDER-LARGE",
+            "item": "Aero commuter helmet",
+            "amount": "89.00",
+            "currency": "EUR",
+            "reason": "Refund order ORDER-LARGE, damaged",
+            "approval_id": "APPROVAL-1"
+          }
+        },
+        {
+          "step": 20,
+          "time": "2026-10-17T14:21:02.145468+00:00",
+          "event": "graph.resume",
+          "decision": {
+            "approved": true,
+            "reviewer": "REVIEWER-A",
+            "note": null
+          },
+          "business_before": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          }
+        },
+        {
+          "step": 21,
+          "time": "2026-10-17T14:21:02.147138+00:00",
+          "event": "approval.resolving",
+          "approval_id": "APPROVAL-1",
+          "decision": {
+            "approved": true,
+            "reviewer": "REVIEWER-A",
+            "note": null
+          }
+        },
+        {
+          "step": 22,
+          "time": "2026-10-17T14:21:02.152300+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 23,
+          "time": "2026-10-17T14:21:02.153035+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 24,
+          "time": "2026-10-17T14:21:02.154413+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "outcome": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-LARGE\", \"amount\": \"89.00\", \"currency\": \"EUR\", \"approved_by\": \"REVIEWER-A\", \"arrives\": \"within 5 working days\"}"
+        },
+        {
+          "step": 25,
+          "time": "2026-10-17T14:21:02.154631+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-2",
+          "latency_ms": 2.336230129003525
+        },
+        {
+          "step": 26,
+          "time": "2026-10-17T14:21:02.155011+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "status": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-LARGE\", \"amount\": \"89.00\", \"currency\": \"EUR\", \"approved_by\": \"REVIEWER-A\", \"arrives\": \"within 5 working days\"}"
+        },
+        {
+          "step": 27,
+          "time": "2026-10-17T14:21:02.156386+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-3",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1",
+            "CALL-2"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 28,
+          "time": "2026-10-17T14:21:02.156717+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-3",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "offline",
+          "latency_ms": 0.37014856934547424,
+          "content": "Done: I've refunded 89.00 EUR for order ORDER-LARGE (refund REFUND-A). It will arrive within 5 working days.",
+          "tool_calls": []
+        },
+        {
+          "step": 29,
+          "time": "2026-10-17T14:21:02.160147+00:00",
+          "event": "approval.resolved",
+          "approval_id": "APPROVAL-1",
+          "status": "answered"
+        },
+        {
+          "step": 30,
+          "time": "2026-10-17T14:21:02.160352+00:00",
+          "event": "action.result",
+          "business_after": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "89.00"
+            },
+            "refunds": [
+              {
+                "id": "REFUND-A",
+                "order_id": "ORDER-LARGE",
+                "amount": "89.00",
+                "reason": "Refund order ORDER-LARGE, damaged",
+                "approved_by": "REVIEWER-A"
+              }
+            ],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "result": {
+            "thread_id": "THREAD-1",
+            "status": "answered",
+            "reply": "Done: I've refunded 89.00 EUR for order ORDER-LARGE (refund REFUND-A). It will arrive within 5 working days.",
+            "tools_used": [],
+            "approval": null
+          }
+        },
+        {
+          "step": 31,
+          "time": "2026-10-17T14:21:02.161746+00:00",
+          "event": "task.state",
+          "business_before": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "business_after": {
+            "order": {
+              "id": "ORDER-LARGE",
+              "status": "delivered",
+              "total": "89.00",
+              "currency": "EUR",
+              "refunded": "89.00"
+            },
+            "refunds": [
+              {
+                "id": "REFUND-A",
+                "order_id": "ORDER-LARGE",
+                "amount": "89.00",
+                "reason": "Refund order ORDER-LARGE, damaged",
+                "approved_by": "REVIEWER-A"
+              }
+            ],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "pending": []
+        },
+        {
+          "step": 32,
+          "time": "2026-10-17T14:21:02.164282+00:00",
+          "event": "task.end",
+          "stop_reason": "completed",
+          "result": {
+            "status": "passed",
+            "task_success": true,
+            "failure_reason": null,
+            "termination_reason": "completed",
+            "model_calls": 3,
+            "tool_proposed_count": 2,
+            "tool_executed_count": 3,
+            "tool_idempotent_replay_count": 0,
+            "input_tokens": null,
+            "output_tokens": null
+          }
+        }
+      ]
+    },
+    {
+      "case": "duplicate_refund",
+      "source": "mock",
+      "raw_trace_sha256": "2c8cccefcb568705ba53538b99d19f15526a0f7febbdee0e118532897c09acf7",
+      "event_count": 32,
+      "events": [
+        {
+          "step": 1,
+          "time": "2026-10-17T14:24:31.873594+00:00",
+          "event": "task.start",
+          "business_before": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "case_id": "duplicate_refund",
+          "variant": "B1",
+          "model_config": {
+            "type": "scripted-tool-model",
+            "model": null,
+            "base_url": null,
+            "temperature": null,
+            "max_tokens": null,
+            "timeout": null,
+            "retries": null,
+            "extra_body": null
+          },
+          "execution_limits": {
+            "model_calls": 8,
+            "tool_calls": 8,
+            "turn_seconds": 120,
+            "tool_seconds": 5
+          },
+          "source_commit": "ba40a8b3d363b19e128f12c08e13752b7eaa8d48"
+        },
+        {
+          "step": 2,
+          "time": "2026-10-17T14:24:31.873948+00:00",
+          "event": "action.user",
+          "business_before": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "content": "Refund order ORDER-SMALL, it arrived broken"
+        },
+        {
+          "step": 3,
+          "time": "2026-10-17T14:24:31.879866+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-1",
+          "message_roles": [
+            [
+              "system",
+              "human"
+            ]
+          ],
+          "tool_message_ids": [],
+          "tools_bound": []
+        },
+        {
+          "step": 4,
+          "time": "2026-10-17T14:24:31.880350+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-1",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "mock",
+          "latency_ms": 0.507839024066925,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "check_refund_eligibility",
+              "args": {
+                "order_id": "ORDER-SMALL"
+              },
+              "id": "CALL-1",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "time": "2026-10-17T14:24:31.880518+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "args": {
+            "order_id": "ORDER-SMALL"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 6,
+          "time": "2026-10-17T14:24:31.883143+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility"
+        },
+        {
+          "step": 7,
+          "time": "2026-10-17T14:24:31.883919+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility"
+        },
+        {
+          "step": 8,
+          "time": "2026-10-17T14:24:31.884555+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "outcome": "success",
+          "result": "{\"order_id\": \"ORDER-SMALL\", \"item\": \"Bottle cage\", \"eligible\": true, \"reason\": \"Delivered 9 days ago, within the 30-day window.\", \"max_amount\": \"18.00\", \"currency\": \"EUR\", \"needs_human_approval\": false}"
+        },
+        {
+          "step": 9,
+          "time": "2026-10-17T14:24:31.885162+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-1",
+          "tool_call_id": "CALL-1",
+          "latency_ms": 2.0273588597774506
+        },
+        {
+          "step": 10,
+          "time": "2026-10-17T14:24:31.885687+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-1",
+          "tool_name": "check_refund_eligibility",
+          "status": "success",
+          "result": "{\"order_id\": \"ORDER-SMALL\", \"item\": \"Bottle cage\", \"eligible\": true, \"reason\": \"Delivered 9 days ago, within the 30-day window.\", \"max_amount\": \"18.00\", \"currency\": \"EUR\", \"needs_human_approval\": false}"
+        },
+        {
+          "step": 11,
+          "time": "2026-10-17T14:24:31.886953+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-2",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 12,
+          "time": "2026-10-17T14:24:31.887208+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-2",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "mock",
+          "latency_ms": 0.2840980887413025,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "request_refund",
+              "args": {
+                "order_id": "ORDER-SMALL",
+                "amount": 18,
+                "reason": "broken"
+              },
+              "id": "CALL-2",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 13,
+          "time": "2026-10-17T14:24:31.887293+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "args": {
+            "order_id": "ORDER-SMALL",
+            "amount": 18,
+            "reason": "broken"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 14,
+          "time": "2026-10-17T14:24:31.889963+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 15,
+          "time": "2026-10-17T14:24:31.890664+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 16,
+          "time": "2026-10-17T14:24:31.895267+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "outcome": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-SMALL\", \"amount\": \"18.00\", \"currency\": \"EUR\", \"approved_by\": \"policy\", \"arrives\": \"within 5 working days\"}"
+        },
+        {
+          "step": 17,
+          "time": "2026-10-17T14:24:31.895495+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-2",
+          "tool_call_id": "CALL-2",
+          "latency_ms": 5.538865923881531
+        },
+        {
+          "step": 18,
+          "time": "2026-10-17T14:24:31.895870+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-2",
+          "tool_name": "request_refund",
+          "status": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-SMALL\", \"amount\": \"18.00\", \"currency\": \"EUR\", \"approved_by\": \"policy\", \"arrives\": \"within 5 working days\"}"
+        },
+        {
+          "step": 19,
+          "time": "2026-10-17T14:24:31.897130+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-3",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1",
+            "CALL-2"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 20,
+          "time": "2026-10-17T14:24:31.897438+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-3",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "mock",
+          "latency_ms": 0.34549087285995483,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "request_refund",
+              "args": {
+                "order_id": "ORDER-SMALL",
+                "amount": 18,
+                "reason": "broken"
+              },
+              "id": "CALL-3",
+              "type": "tool_call"
+            }
+          ]
+        },
+        {
+          "step": 21,
+          "time": "2026-10-17T14:24:31.897517+00:00",
+          "event": "tool.proposed",
+          "tool_call_id": "CALL-3",
+          "tool_name": "request_refund",
+          "args": {
+            "order_id": "ORDER-SMALL",
+            "amount": 18,
+            "reason": "broken"
+          },
+          "protocol_valid": true
+        },
+        {
+          "step": 22,
+          "time": "2026-10-17T14:24:31.900093+00:00",
+          "event": "tool.attempt",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-3",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 23,
+          "time": "2026-10-17T14:24:31.900941+00:00",
+          "event": "tool.execution_start",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-3",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 24,
+          "time": "2026-10-17T14:24:31.901679+00:00",
+          "event": "tool.execution_end",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-3",
+          "tool_name": "request_refund",
+          "outcome": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-SMALL\", \"amount\": \"18.00\", \"currency\": \"EUR\", \"approved_by\": \"policy\", \"arrives\": \"within 5 working days\", \"idempotent_replay\": true}"
+        },
+        {
+          "step": 25,
+          "time": "2026-10-17T14:24:31.901803+00:00",
+          "event": "tool.idempotent_replay",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-3",
+          "tool_name": "request_refund"
+        },
+        {
+          "step": 26,
+          "time": "2026-10-17T14:24:31.901976+00:00",
+          "event": "tool.return",
+          "invocation_id": "INVOCATION-3",
+          "tool_call_id": "CALL-3",
+          "latency_ms": 1.8915385007858276
+        },
+        {
+          "step": 27,
+          "time": "2026-10-17T14:24:31.902345+00:00",
+          "event": "tool.observation",
+          "tool_call_id": "CALL-3",
+          "tool_name": "request_refund",
+          "status": "success",
+          "result": "{\"status\": \"refunded\", \"refund_id\": \"REFUND-A\", \"order_id\": \"ORDER-SMALL\", \"amount\": \"18.00\", \"currency\": \"EUR\", \"approved_by\": \"policy\", \"arrives\": \"within 5 working days\", \"idempotent_replay\": true}"
+        },
+        {
+          "step": 28,
+          "time": "2026-10-17T14:24:31.904763+00:00",
+          "event": "model.request",
+          "call_id": "MODEL-4",
+          "message_roles": [
+            [
+              "system",
+              "human",
+              "ai",
+              "tool",
+              "ai",
+              "tool",
+              "ai",
+              "tool"
+            ]
+          ],
+          "tool_message_ids": [
+            "CALL-1",
+            "CALL-2",
+            "CALL-3"
+          ],
+          "tools_bound": []
+        },
+        {
+          "step": 29,
+          "time": "2026-10-17T14:24:31.905401+00:00",
+          "event": "model.response",
+          "call_id": "MODEL-4",
+          "usage": {
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "raw": null,
+            "normalized": {}
+          },
+          "usage_source": "mock",
+          "latency_ms": 0.700339674949646,
+          "content": "Refunded 18.00 EUR for order ORDER-SMALL",
+          "tool_calls": []
+        },
+        {
+          "step": 30,
+          "time": "2026-10-17T14:24:31.909118+00:00",
+          "event": "action.result",
+          "business_after": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "18.00"
+            },
+            "refunds": [
+              {
+                "id": "REFUND-A",
+                "order_id": "ORDER-SMALL",
+                "amount": "18.00",
+                "reason": "broken",
+                "approved_by": "policy"
+              }
+            ],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "result": {
+            "thread_id": "THREAD-1",
+            "status": "answered",
+            "reply": "Refunded 18.00 EUR for order ORDER-SMALL",
+            "tools_used": [
+              "check_refund_eligibility",
+              "request_refund",
+              "request_refund"
+            ],
+            "approval": null
+          }
+        },
+        {
+          "step": 31,
+          "time": "2026-10-17T14:24:31.910834+00:00",
+          "event": "task.state",
+          "business_before": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "0"
+            },
+            "refunds": [],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "business_after": {
+            "order": {
+              "id": "ORDER-SMALL",
+              "status": "delivered",
+              "total": "18.00",
+              "currency": "EUR",
+              "refunded": "18.00"
+            },
+            "refunds": [
+              {
+                "id": "REFUND-A",
+                "order_id": "ORDER-SMALL",
+                "amount": "18.00",
+                "reason": "broken",
+                "approved_by": "policy"
+              }
+            ],
+            "ticket_count": 0,
+            "other_orders": "omitted; full-state oracle checks unchanged"
+          },
+          "pending": []
+        },
+        {
+          "step": 32,
+          "time": "2026-10-17T14:24:31.912961+00:00",
+          "event": "task.end",
+          "stop_reason": "completed",
+          "result": {
+            "status": "passed",
+            "task_success": true,
+            "failure_reason": null,
+            "termination_reason": "completed",
+            "model_calls": 4,
+            "tool_proposed_count": 3,
+            "tool_executed_count": 3,
+            "tool_idempotent_replay_count": 1,
+            "input_tokens": null,
+            "output_tokens": null
+          }
+        }
+      ]
+    }
+  ]
+}

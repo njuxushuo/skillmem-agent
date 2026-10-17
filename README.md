@@ -2,7 +2,8 @@
 
 基于 [nitanandsinghupw/langgraph-support-agent](https://github.com/nitanandsinghupw/langgraph-support-agent) 的轻量单 Agent 电商售后研究项目，沿用 LangGraph、原8个业务工具、政策校验和人工审批。
 
-**当前完成 Stage 1：DeepSeek 非思考适配、Mock 协议验证、Tracing 与任务级评测器。** 真实 DeepSeek 已完成一次受限冒烟：8次请求，修正格式匹配后对同一真实轨迹离线复判3/3，详见[在线补充报告](docs/reports/phase_1_live_smoke.md)；Skill Routing、TaskMemory、Context Budget、Planning 尚未实现。Stage 1 交付后等待审查，不自动进入 Stage 2。
+**当前完成 Stage 2：B1 执行可靠性基线。** SQLite业务持久化、退款/取消幂等、审批恢复、单工具Guard与执行预算已通过离线故障测试。Stage 1真实DeepSeek验收保留为历史证据；本阶段付费API调用0。Skill、TaskMemory、Context压缩及Planning尚未实现。详见[Stage 2报告](docs/reports/phase_2.md)。
+
 
 ## 来源与版本
 
@@ -53,16 +54,16 @@ python3.12 -m venv .venv
 SUPPORT_MODEL_PROVIDER=offline .venv/bin/python -m support_agent --customer C100
 ```
 
-`.env.example`只说明现有配置；程序不会自动加载`.env`。`SUPPORT_DB`目前只由API读取，CLI不会读取。订单、退款、工单仍在内存；演示日期固定为2025-10-01。
+`.env.example`只说明配置；程序不会自动加载`.env`。CLI/API均读取`SUPPORT_DB`，默认`.local/db/support.sqlite`并创建父目录；B1保存业务、审批、checkpoint与执行计数。直接构造`SupportService(db_path=None)`仅用于临时运行，没有跨进程持久化。演示业务日期固定为2025-10-01。
 
-API的`X-Customer-Id`和员工共享Key只是演示鉴权，不可直接对外部署。业务状态持久化、审批恢复异常、并发、多工具审批等已知限制保留为B0事实，不声称生产可靠性。
+API的`X-Customer-Id`和员工共享Key只是演示鉴权，不可直接对外部署。B1已验证本机SQLite持久化、异常恢复和串行执行；B0保留原有风险。文件锁限定本机POSIX文件系统，工具截止时间为协作检查，不声称生产支付或分布式可靠性。见[limitations](docs/limitations.md)。
 
 ## 当前目录与职责
 
 ```text
 skillmem-agent/
-├── src/support_agent/         # 复用上游；新增 evaluation.py 与 tracing.py
-├── tests/                     # 原4文件/24测试不变；新增 test_deepseek/test_evaluation
+├── src/support_agent/         # 唯一应用包；含 evaluation/tracing/execution
+├── tests/                     # 原测试保留；新增 persistence/reliability 异常测试
 ├── data/                      # 原数据不变；新增 eval_tasks.json 开发夹具
 ├── examples/                  # 原客服输入示例
 ├── docs/
@@ -70,7 +71,7 @@ skillmem-agent/
 │   ├── implementation_plan.md # Stage 0–5实施规范
 │   ├── upstream_README.md     # 原作者README留存
 │   ├── evaluation_protocol.md # 当前测量口径与复现方式
-│   └── reports/phase_{0,1}.md # 阶段结果和Architecture & Directory Audit
+│   └── reports/phase_{0,1,2}.md # 阶段结果和Architecture & Directory Audit（含phase_2）
 ├── artifacts/                 # B0清单、阶段脱敏统计；无完整原始日志
 ├── scripts/run_offline.py     # 本地/CI共用的禁网验证入口
 ├── .github/workflows/ci.yml   # 固定环境的离线回归
@@ -80,7 +81,7 @@ skillmem-agent/
 
 本地`research/`取证快照及旧笔记不提交；`.local/`保存依赖缓存、原始日志和运行数据库。没有提前创建空的`state.py/memory.py/context.py/skills.py/planning.py`。
 
-[实施规范](docs/implementation_plan.md)决定功能范围和Gate；[架构规范](docs/architecture.md)决定目录和依赖边界。Stage 1结束后等待审查，禁止自动进入Stage 2。
+[实施规范](docs/implementation_plan.md)决定功能范围和Gate；[架构规范](docs/architecture.md)决定目录和依赖边界。Stage 2结束后等待审查，禁止自动进入Stage 3。
 
 
 ## Stage 1 测量与 DeepSeek
@@ -92,8 +93,29 @@ skillmem-agent/
   --tasks data/eval_tasks.json --repeat 2 --output .local/runs
 ```
 
-每个任务使用独立 Store、临时 SQLite 与会话；输出JSONL/CSV/JSON。当前唯一变体为B0-compatible，保留原有业务行为。以最终订单/退款状态判成功，工具提议与函数真实执行分别计数；usage缺失为null，不用0伪装。
+每个任务使用独立 Store、临时 SQLite 与会话；输出JSONL/CSV/JSON。默认变体为B1；通过`--variant B0-compatible`选择原行为兼容路径。B0权威版本固定在`b0-compatible`标签，B1固定在`b1-baseline`；两者使用独立数据库。以最终订单/退款状态判成功，工具提议与函数真实执行分别计数；usage缺失为null，不用0伪装。
 
 DeepSeek使用环境变量配置，见 [.env.example](.env.example)。默认`deepseek-flash`、Chat Completions、thinking disabled、temperature=0、1024输出Token、60秒超时、不自动重试。`bind_tools`、多轮tool_call_id与审批恢复已通过Mock和真实服务端冒烟验证（仅3个合成业务任务，不代表通用成功率）。程序不会自动加载.env或运行付费Smoke。
 
 完整原始轨迹只写Git忽略的`.local/`。当前7个任务属于开发夹具，未来独立Final集尚未冻结；SOP目前仅计量退款前资格查询。协议、计数/Token/审批语义与限制见 [evaluation_protocol.md](docs/evaluation_protocol.md)。
+
+
+## B1 使用与恢复
+
+```bash
+# 默认B1：原场景、新任务，全程禁网
+.venv/bin/python scripts/run_offline.py scenarios
+.venv/bin/python scripts/run_offline.py tasks
+# 明确选择变体与共同预算（只用离线模型）
+.venv/bin/python -m support_agent.evaluate --provider offline --variant B1 \
+  --tasks data/eval_tasks.json --max-model-calls 8 --max-tool-calls 8 \
+  --turn-timeout 120 --tool-timeout 5
+# 历史兼容路径；91项旧pytest也明确运行在这个模式
+SKILLMEM_VARIANT=B0-compatible .venv/bin/python scripts/run_offline.py tasks
+```
+
+`B1`仍全量绑定8工具、使用原System和40条历史策略；不包含Memory/Skill收益。默认每用户轮次最多8次模型尝试、8次工具尝试；批准恢复计入原预算，等待人工的时间不计入本次执行截止时间。模型SDK重试必须为0；工具异常不自动重放。未来M/MS须共用同一执行层和预算。
+
+审批使用`approval_id`匹配决定；重复相同决定返回已保存结果，不同决定返回409。同会话出现过多个审批后必须提供ID。中途失败保留原决定，重复同一审批决定即可恢复；不能更换批准人/备注来覆盖既定决定。非审批checkpoint故障通过服务接口`retry_turn(customer_id, thread_id)`显式恢复，不重新提交原用户消息。该维护接口尚未暴露HTTP路由。
+
+B0数据库缺少历史业务记录，禁止直接用B1打开后重新种入订单；使用新B1数据库，或人工对账后另行迁移。CLI/APIs默认共用同一数据库，隔离演示时请配置不同路径。程序没有接入任何真实支付或订单系统。

@@ -1,13 +1,13 @@
-# Stage 1：B0-compatible 测量协议
+# B0-compatible / B1 测量协议
 
 Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留不改。2026-10-17获批一次在线补充验收，8次真实请求成功；原Oracle因日期/币种表示判0/3，通用格式修正后对原轨迹离线复判3/3，未追加API调用。见[在线补充报告](reports/phase_1_live_smoke.md)。离线与Mock数字仍不代表真实模型效果。
 
 ## 版本与边界
 
 - B0 固定上游：`b6fe9faebff8a1af549ae7b8cabcb0b6e6479cec`，标签 `b0-upstream`；Stage 0：`stage-0`。
-- 当前只提供 `B0-compatible`：相同的8工具、System Prompt、40条历史裁剪、循环上限、审批与内存 Store；追加 DeepSeek 适配与共同计量。
-- `graph.py/tools.py/policy.py/store.py/offline_model.py` 不修改。原 `tools_used` 仍是提议序列。没有 Stage 2 的单调用限制、幂等或审批恢复修复。
-- `B1/M/MS/MSP` 未实现；不能将本阶段结果包装成这些变体的消融实验。
+- B0权威锚点`b0-compatible`=`0021b1d96a942bbd4259317bcfd5f494c33d7617`；当前兼容模式保留原8工具/System/历史/内存业务与原控制行为。B1默认启用本阶段可靠执行与SQLite业务存储。
+- Stage 2修改graph/tools/store/service以实现B1；policy/offline_model仍未修改。原`tools_used`仍为提议序列，实际执行见Trace。
+- B1已实现；M/MS/MSP尚未实现。本阶段只有可靠性/兼容性测试，没有架构优化消融结论。
 - `data/eval_tasks.json` 是 **7个 Stage 1 开发夹具**，不是 Stage 5 的 Frozen Final。原11场景文件不变。
 
 ## 运行
@@ -23,7 +23,7 @@ Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留�
   --tasks data/eval_tasks.json --repeat 2 --output .local/runs
 ```
 
-新 `--tasks` 路径失败返回退出码1，成功返回0；旧场景入口与其退出码缺陷保持B0不变。CI 使用禁网入口并运行全部测试，无真实 Key。
+新 `--tasks` 路径失败返回退出码1，成功返回0；旧场景入口本阶段也修复为失败退出1。CI 使用禁网入口并运行全部测试，无真实 Key。
 
 通用 `--provider deepseek` 入口会产生费用，本身不提供本次的美元预算保证。本次真实验收使用 `scripts/run_live_smoke.py` 的独立受限HTTP transport：15次/2美元双上限，已完成且持久化账本拒绝重复执行。仅该脚本支持显式 `--env-file`；程序不会自动加载 `.env` 或自动运行付费 smoke。
 
@@ -45,11 +45,11 @@ Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留�
 
 2026-10-17 只读核对官方 [Tool Calls](https://api-docs.deepseek.com/guides/tool_calls) 、[Thinking Mode](https://api-docs.deepseek.com/guides/thinking_mode) 和 [Chat Completions](https://api-docs.deepseek.com/api/create-chat-completion)：示例使用 `deepseek-flash` 与显式关闭 thinking。本次已用该模型完成真实冒烟；可用性只代表本次账户与时间。将来开启思考模式需重新解决 `reasoning_content` 回传，不能只改一个环境变量。
 
-默认不重试便于计量；如果配置 SDK retries > 0，`model_calls` 是 **LangChain 逻辑调用数**，不等于每次 HTTP 尝试数；可能付费但未获得 usage 的请求仍 unknown。工具无自动重试逻辑；模型重新提议或审批重入照实记录。
+B1要求SDK retries=0，防止绕过显式请求次数预算。B0如果配置 SDK retries > 0，`model_calls` 是 **LangChain 逻辑调用数**，不等于每次 HTTP 尝试数；可能付费但未获得 usage 的请求仍 unknown。工具无自动重试逻辑；模型重新提议或审批重入照实记录。
 
 ## 任务输入与隔离
 
-`EvalCase` 要求 `case_id/category/customer_id/fixture/clock/turns/approval_script/expected`。当前固定夹具 `store.json`、日期2025-10-01；每 task×repeat 新模型、新 Store、独立 UUID thread、新临时 SQLite。数据库在任务结束关闭并删除；事实快照留在本地轨迹。测试重复两次验证退款互不污染。
+`EvalCase` 要求 `case_id/category/customer_id/fixture/clock/turns/approval_script/expected`。当前固定夹具 `store.json`、日期2025-10-01；每 task×repeat 新模型、新 Store、独立 UUID thread、新临时 SQLite。B1将业务快照、幂等回执、审批journal与执行计数也存入该临时数据库。数据库在任务结束关闭并删除；事实快照留在本地轨迹。测试重复两次验证退款互不污染。
 
 用户 turn 按顺序调用 `SupportService.chat`；等待审批时按脚本调用 `resolve_approval`。无可用审批脚本则停止该任务并标记 incomplete，多余未消费审批同样失败。任务异常记录错误类型和本地详情，继续后续任务。评测器不替 Agent 选择工具，不替业务执行退款。
 
@@ -77,7 +77,7 @@ Stage 1 首次交付的真实 DeepSeek 状态为 `not_run`，历史报告保留�
 - `model.request/response/error`：消息、有效工具schema/请求参数、调用ID、耗时、原始与规范化usage，来源 offline/mock/provider。
 - `tool.proposed`：含有效与非法JSON提议；`tool.attempt`：进入BaseTool；`tool.execution_start`：通过参数验证后真正进入函数。
 - `tool.execution_end`：成功/业务拒绝；`tool.execution_error`：函数异常；`tool.paused`：GraphInterrupt原样抛回，非普通失败。
-- `tool.observation`：ToolMessage，包括不存在工具/参数验证失败；按tool_call_id去重避免图回调重复统计。重复使用同一call_id的异常模型不适用于此去重口径，执行事件仍逐次保留。
+- `tool.observation`：ToolMessage，包括不存在工具/参数验证失败；按ToolMessage.id去重避免图回调重复统计；在首次观测时为无id消息分配身份。重复tool_call_id产生的新结果仍记录，工具协议ID不变。
 - `graph.interrupt/resume/error`、`action.user/result`、`task.state/end`：审批决定、状态前后快照与差异、终止原因。含run/thread/step，active_skill=null。
 
 计数定义：proposed为模型提议数，executed为真实函数入口数，success为非拒绝正常返回数，rejected为业务拒绝，execution_error为函数异常，protocol_error为错误ToolMessage，paused为审批暂停，reentry为重复call_id的函数入口。各错误维度可能重叠，不可简单相加。审批恢复进入相同函数是实际工作，应计入 executed/reentry；不等于新增退款。退款成功以 Store 为准。
@@ -92,6 +92,19 @@ Usage 优先取 `AIMessage.usage_metadata`，保留 `response_metadata.token_usa
 
 Key、authorization等字段和常见凭据格式脱敏，runner显式注册当前模型密钥以清除错误消息中的精确值；不记录请求头。**这不是通用PII匿名化工具**：完整对话、业务快照仍只能留在Git忽略的本地目录。GitHub仅提交人工审查的合成夹具摘要。
 
-日志写入失败不改变业务结果或重放工具，runner将该测量标记error。无法建立输出目录等基础设施错误直接失败。业务Store仍内存、审批先领取后resume、同thread并发和多interrupt等风险属于Stage 2，均未提前修复。
+日志写入失败不改变业务结果或重放工具，runner将该测量标记error。无法建立输出目录等基础设施错误直接失败。以上内存Store/领取后删除pending/并发风险仅保留在B0；B1执行可靠性及边界见下文。
 
 真实API状态由`deepseek_api_status`判定：无调用not_run、尝试后无成功响应failed、部分响应/错误partial_failure、全部收到响应api_succeeded。API成功与Task Success独立；失败分类区分api_error、budget_limit、model_decision_failure、oracle_failure、setup_error与measurement_error。Mock/offline不得标成真实成功。
+
+
+## Stage 2：B1统一安全基线
+
+实现提交、Gate和证据见[phase_2](reports/phase_2.md)。选择`run_cases(..., variant="B1", limits=ExecutionLimits(...))`，或CLI `--variant B1`；未指定时读取`SKILLMEM_VARIANT`，默认B1。每条结果保存variant和execution_limits，task.start同样记录。B0没有这套安全预算，字段为null；核心优化归因只比较共用该预算的B1/M/MS，不以B0的较弱安全语义冒充优化收益。
+
+默认每用户轮次8模型、8工具尝试；审批重入计入原工具预算，重启不重置。每次chat/resume有120秒截止时间，工具5秒协作截止。工具参数错误/多调用可交给模型改正，但仍消耗模型预算；函数异常直接终止，不自动重试副作用。模型SDK retries必须0；DB预算是尝试预留，Tracing函数入口才是实际执行数，因崩溃等原因两者不一定相等。
+
+新增`tool_idempotent_replay_count`、`guard_rejected_count`；保留提议/入口/正常返回/业务拒绝/异常/暂停/重入指标。`execution.stopped`给出模型或工具预算耗尽、模型异常、工具超时/失败、协议ID不可恢复等原因。业务幂等回放仍是一次实际函数调用，另标记回放次数，不能当成新的退款。
+
+工具错误输出JSON含error/status/retryable。retryable表示临时性质，**不是自动重试指令**；如业务成功而checkpoint失败，仅从原checkpoint显式恢复，稳定操作回执阻止二次副作用。本阶段93.33%语句覆盖率、153pytest、B0/B1各11/7场景/任务均为离线软件证据；本阶段真实API为not_run、Token和费用未知，不填0。
+
+Stage 3/4引入优化时须继续使用同一ExecutionLimits、工具/审批实现、固定模型/数据/日期和usage口径；若启用不同预算必须另列实验组，不能直接比较原组的成本和成功率。B1使用全量8工具与原历史，尚未实现Context Token Budget。

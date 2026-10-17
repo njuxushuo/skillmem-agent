@@ -154,3 +154,26 @@ def test_budget_error_survives_sdk_wrapping(tmp_path, monkeypatch):
     assert report["results"][0]["failure_category"] == "budget_limit"
     assert report["results"][0]["model_error_count"] == 1
     assert ledger.summary()["http_attempts"] == 0
+
+
+def test_offline_audit_never_claims_mock_as_real_or_rewrites_evidence(tmp_path, monkeypatch):
+    from langchain_core.language_models import BaseChatModel
+
+    from support_agent.evaluation import run_cases
+
+    cases = json.loads(Path("data/eval_tasks.json").read_text())
+    summary = run_cases([cases[0], cases[2], cases[3]], tmp_path)
+    evidence = tmp_path / "live_result.json"
+    evidence.write_text(
+        json.dumps({"evaluation": summary, "budget": {"http_attempts": 0, "cost_upper_usd": "0", "stopped": None}})
+    )
+    before = evidence.read_bytes()
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Offline audit must not call any model")
+
+    monkeypatch.setattr(BaseChatModel, "invoke", forbidden)
+    audit = smoke.audit_smoke(evidence)
+    assert audit["new_api_calls"] == 0 and audit["gate"] == "FAIL"  # offline evidence cannot pass live Gate
+    assert all(r["rejudged"]["task_success"] and not r["protocol_errors"] for r in audit["results"])
+    assert evidence.read_bytes() == before

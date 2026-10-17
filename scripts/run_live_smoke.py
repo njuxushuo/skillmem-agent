@@ -195,15 +195,154 @@ def load_key(env_file: Path | None):
         raise ValueError("missing_environment_credential")
 
 
+def audit_smoke(path: Path) -> dict:
+    """Rejudge existing real evidence OFFLINE. Never invoke a model or alter original traces."""
+    from support_agent.evaluation import EvalCase, judge, provenance
+    from support_agent.policies_kb import PolicyBase
+    from support_agent.policy import PolicyConfig
+    from support_agent.service import default_data_dir
+    from support_agent.store import Store
+    from support_agent.tools import make_tools
+
+    original = json.loads(path.read_text())
+    summary, budget = original["evaluation"], original["budget"]
+    data = default_data_dir()
+    schemas = {
+        t.name: t.args_schema
+        for t in make_tools(Store.load(data / "store.json"), PolicyBase(data / "policies.md"), PolicyConfig())
+    }
+    audited = []
+    for index, row in enumerate(summary["results"]):
+        events = [json.loads(line) for line in (Path(summary["run_dir"]) / f"1-{index}.jsonl").read_text().splitlines()]
+        start = next(e for e in events if e["event"] == "task.start")
+        state = next(e for e in events if e["event"] == "task.state")
+        reply = [e for e in events if e["event"] == "action.result"][-1]["result"]["reply"]
+        approval, decisions = None, []
+        for event in events:
+            if event["event"] == "graph.interrupt":
+                approval = event["details"]
+            if event["event"] == "graph.resume":
+                decisions.append({**event["decision"], "order_id": approval["order_id"], "amount": approval["amount"]})
+        verdict = judge(
+            EvalCase.model_validate(start["case"]),
+            state["business_before"],
+            state["business_after"],
+            reply,
+            completed=row["termination_reason"] == "completed",
+            approvals=decisions,
+        )
+        protocol_errors = []
+        proposals = [e for e in events if e["event"] == "tool.proposed"]
+        for proposal in proposals:
+            try:
+                schemas[proposal["tool_name"]].model_validate(proposal["args"])
+                if not proposal["protocol_valid"]:
+                    raise ValueError("invalid_call")
+            except (KeyError, ValueError, TypeError):
+                protocol_errors.append("invalid_tool_or_arguments")
+        ids = [e["tool_call_id"] for e in proposals]
+        observations = [e["tool_call_id"] for e in events if e["event"] == "tool.observation"]
+        if len(ids) != len(set(ids)) or sorted(ids) != sorted(observations):
+            protocol_errors.append("proposal_observation_pairing")
+        for event in events:
+            if event["event"] != "model.request":
+                continue
+            for group in event["messages"]:
+                pending = set()
+                for message in group:
+                    body = message["data"]
+                    if message["type"] == "tool":
+                        call_id = body["tool_call_id"]
+                        if call_id not in pending:
+                            protocol_errors.append("orphan_tool_message")
+                        pending.discard(call_id)
+                    else:
+                        if pending:
+                            protocol_errors.append("unresolved_tool_message")
+                        if message["type"] == "ai":
+                            pending = {c["id"] for c in body["tool_calls"]}
+                if pending:
+                    protocol_errors.append("unfinished_model_input")
+        usage = [e["usage"]["raw"] for e in events if e["event"] == "model.response"]
+        cache_complete = all(
+            isinstance(u, dict)
+            and all(
+                type(u.get(k)) is int
+                for k in ("prompt_cache_hit_tokens", "prompt_cache_miss_tokens", "completion_tokens", "prompt_tokens")
+            )
+            and u["prompt_cache_hit_tokens"] + u["prompt_cache_miss_tokens"] == u["prompt_tokens"]
+            for u in usage
+        )
+        peak = (
+            sum(
+                (
+                    Decimal("0.006") * u["prompt_cache_hit_tokens"]
+                    + INPUT_RATE * u["prompt_cache_miss_tokens"]
+                    + OUTPUT_RATE * u["completion_tokens"]
+                )
+                / 1_000_000
+                for u in usage
+            )
+            if cache_complete
+            else None
+        )
+        audited.append(
+            {
+                "case_id": row["case_id"],
+                "original_task_success": row["task_success"],
+                "original_failure_reason": row["failure_reason"],
+                "rejudged": verdict,
+                "protocol_errors": protocol_errors,
+                "approval_resume_seen": bool(decisions),
+                "reply": reply,
+                "peak_price_calculated_usd": str(peak) if peak is not None else None,
+                "off_peak_price_calculated_usd": str(peak / 2) if peak is not None else None,
+            }
+        )
+    passed = (
+        summary["usage_source"] == "provider"
+        and summary["real_deepseek_status"] == "api_succeeded"
+        and len(audited) == 3
+        and all(r["rejudged"]["task_success"] and not r["protocol_errors"] for r in audited)
+        and all(r["total_tokens"] is not None for r in summary["results"])
+        and all(r["sop_compliance"] is not False for r in summary["results"])
+        and audited[-1]["approval_resume_seen"]
+        and budget["http_attempts"] <= REQUEST_LIMIT
+        and Decimal(budget["cost_upper_usd"]) <= USD_LIMIT
+        and not budget["stopped"]
+    )
+    audit_source = provenance(data, [])
+    return {
+        "audit_code_commit": audit_source["git_sha"],
+        "audit_source_hash": audit_source["source_hash"],
+        "audit_working_tree_dirty": audit_source["working_tree_dirty"],
+        "original_result_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "mode": "offline_rejudgment_of_saved_trace",
+        "new_api_calls": 0,
+        "original_code_commit": summary["results"][0]["git_sha"],
+        "gate": "PASS" if passed else "FAIL",
+        "actual_billed_usd": None,
+        "results": audited,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true", help="Explicitly run the authorized paid smoke")
     parser.add_argument("--env-file", type=Path)
+    parser.add_argument("--audit-only", action="store_true", help="Offline rejudgment; no model calls")
     args = parser.parse_args()
-    if not args.execute:
-        raise SystemExit("No API call: --execute required")
+    if args.audit_only and args.execute:
+        raise SystemExit("Choose execute OR offline audit")
     root = Path(__file__).resolve().parents[1]
     os.chdir(root)
+    if args.audit_only:
+        audit = audit_smoke(root / ".local/stage1_live/live_result.json")
+        (root / ".local/stage1_live/audit_result.json").write_text(json.dumps(audit, indent=2) + "\n")
+        print(json.dumps(audit))
+        return 0 if audit["gate"] == "PASS" else 1
+    if not args.execute:
+        raise SystemExit("No API call: --execute required")
     os.environ.update(
         SUPPORT_MODEL_PROVIDER="deepseek",
         DEEPSEEK_MODEL="deepseek-flash",

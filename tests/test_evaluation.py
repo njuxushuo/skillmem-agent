@@ -279,3 +279,21 @@ def test_real_api_status_requires_responses(counts, expected):
     assert deepseek_api_status(results, "deepseek", "provider") == expected
     assert deepseek_api_status(results, "deepseek", "mock") == "not_run"
     assert deepseek_api_status(results, "offline", "offline") == "not_run"
+
+
+@pytest.mark.parametrize(
+    "reply,fact,matched",
+    [
+        ("Expected October 3, 2025", "2025-10-03", True),
+        ("Expected 3 Oct 2025", "2025-10-03", True),
+        ("Expected October 4, 2025", "2025-10-03", False),
+        ("Expected February 30, 2025", "2025-02-28", False),
+        ("Refunded €18.00", "EUR", True),
+        ("Refunded 18.00 EUR", "EUR", True),
+        ("Refunded $18.00 USD", "EUR", False),
+    ],
+)
+def test_equivalent_reply_facts_and_wrong_values(reply, fact, matched):
+    from support_agent.evaluation import reply_fact_present
+
+    assert reply_fact_present(reply, fact) is matched

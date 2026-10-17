@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import re
 import subprocess
 import uuid
 from copy import deepcopy
@@ -73,6 +74,42 @@ def snapshot(store: Store) -> dict:
     )
 
 
+def reply_fact_present(reply: str, fact: str) -> bool:
+    """Accept explicit EUR symbols and equivalent English dates; no semantic guessing."""
+    if fact.upper() == "EUR":
+        return bool(re.search(r"\bEUR\b|€", reply, re.I))
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", fact):
+        months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
+        month_index = {name.lower(): i for i, month in enumerate(months, 1) for name in (month, month[:3])}
+        names = "|".join(month_index)
+
+        def normalize(match):
+            try:
+                return date(int(match["year"]), month_index[match["month"].lower()], int(match["day"])).isoformat()
+            except ValueError:
+                return match[0]  # impossible dates are not equivalent evidence
+
+        for pattern in (
+            rf"\b(?P<month>{names}) (?P<day>\d{{1,2}}),? (?P<year>\d{{4}})\b",
+            rf"\b(?P<day>\d{{1,2}}) (?P<month>{names}) (?P<year>\d{{4}})\b",
+        ):
+            reply = re.sub(pattern, normalize, reply, flags=re.I)
+    return fact.lower() in reply.lower()
+
+
 def judge(case: EvalCase, before: dict, after: dict, reply: str, *, completed: bool, approvals: list[dict]) -> dict:
     """Compare whole business state, accepting only the fixture's intended mutation."""
     expected = case.expected
@@ -88,7 +125,7 @@ def judge(case: EvalCase, before: dict, after: dict, reply: str, *, completed: b
             failures.append("query_requires_facts")
         for field in expected.facts:
             fact = order.get(field)
-            if fact is None or str(fact).lower() not in reply.lower():
+            if fact is None or not reply_fact_present(reply, str(fact)):
                 failures.append(f"missing_fact:{field}")
         if expected.order_id not in reply:
             failures.append("missing_order_reference")
@@ -123,7 +160,7 @@ def judge(case: EvalCase, before: dict, after: dict, reply: str, *, completed: b
     if after != target:
         failures.append("unexpected_business_state")
     for text in expected.reply_contains:
-        if text.lower() not in reply.lower():
+        if not reply_fact_present(reply, text):
             failures.append("missing_reply_fact")
     return {"task_success": not failures, "failure_reason": ";".join(failures) or None}
 

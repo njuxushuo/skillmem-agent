@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import re
 import subprocess
 import uuid
@@ -19,6 +20,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from support_agent.execution import ExecutionLimits
 from support_agent.models import get_model
 from support_agent.service import SupportService, default_data_dir
 from support_agent.store import Store
@@ -210,6 +212,13 @@ def failure_category(result: dict, events: list[dict]) -> str | None:
     errors = [e for e in events if e["event"] == "model.error"]
     if errors:
         return errors[-1].get("failure_category", "api_error")
+    stopped = [e for e in events if e["event"] == "execution.stopped"]
+    if stopped:
+        reason = stopped[-1]["reason"]
+        if reason.endswith("_exhausted") or reason == "execution_configuration_changed":
+            return "budget_limit"
+        if reason in {"tool_timeout", "tool_execution_failed"}:
+            return "tool_execution_failure"
     if not result["model_calls"]:
         return "setup_error"
     if (
@@ -271,8 +280,14 @@ def run_cases(
     model_factory=None,
     usage_source: Literal["offline", "mock", "provider"] | None = None,
     repeat: int = 1,
+    variant: str | None = None,
+    limits: ExecutionLimits | None = None,
 ) -> dict:
     """Run every case independently; return public-shaped metrics, keep raw evidence local."""
+    variant = variant or os.getenv("SKILLMEM_VARIANT", "B1")
+    limits = limits or ExecutionLimits()
+    if variant not in {"B0-compatible", "B1"}:
+        raise ValueError("Unsupported variant")
     if not isinstance(cases, list) or not cases:
         raise ValueError("cases must be a nonempty list")
     if repeat < 1:
@@ -294,7 +309,7 @@ def run_cases(
             result = {
                 **meta,
                 "case_id": f"invalid_{index}",
-                "variant": "B0-compatible",
+                "variant": variant,
                 "repeat": repetition,
                 "thread_id": thread_id,
                 "status": "error",
@@ -302,6 +317,7 @@ def run_cases(
                 "failure_reason": None,
                 "model_config_hash": None,
                 "sop_compliance": None,
+                "execution_limits": asdict(limits) if variant == "B1" else None,
             }
             service = None
             try:
@@ -318,12 +334,19 @@ def run_cases(
                 approvals = []
                 with TemporaryDirectory(prefix="db-", dir=run_dir) as temp:
                     service = SupportService(
-                        model=model, store=store, db_path=str(Path(temp) / "checkpoint.sqlite"), trace=trace
+                        model=model,
+                        store=store,
+                        db_path=str(Path(temp) / "checkpoint.sqlite"),
+                        trace=trace,
+                        variant=variant,
+                        limits=limits,
                     )
                     trace.emit(
                         "task.start",
                         case=case.model_dump(mode="json"),
                         model_config=config,
+                        variant=variant,
+                        execution_limits=asdict(limits) if variant == "B1" else None,
                         provenance=meta,
                         business_before=before,
                     )
@@ -348,12 +371,14 @@ def run_cases(
                                     }
                                 )
                                 trace.emit("graph.resume", decision=decision, business_before=snapshot(store))
-                                answer = service.resolve_approval(thread_id, **decision)
+                                answer = service.resolve_approval(
+                                    thread_id, **decision, approval_id=answer.approval.get("approval_id")
+                                )
                                 trace.emit("action.result", result=asdict(answer), business_after=snapshot(store))
                             if answer.status == "awaiting_approval":
                                 break
                         completed = answer.status == "answered" and approval_index == len(case.approval_script)
-                        graph_errors = [e for e in trace.events if e["event"] == "graph.error"]
+                        graph_errors = [e for e in trace.events if e["event"] in {"graph.error", "execution.stopped"}]
                         verdict = judge(
                             case,
                             before,
@@ -365,7 +390,7 @@ def run_cases(
                         result.update(verdict)
                         result["status"] = "passed" if verdict["task_success"] else "failed"
                         result["termination_reason"] = (
-                            graph_errors[-1]["error"]
+                            graph_errors[-1].get("reason", graph_errors[-1].get("error"))
                             if graph_errors
                             else "completed"
                             if completed
@@ -382,8 +407,8 @@ def run_cases(
                             },
                             pending=service.pending_approvals(),
                         )
-                        # Evaluation owns this connection; no runtime lifecycle/behavior change.
-                        service.registry._db.close()
+                        # Evaluation owns the isolated store, ledger, saver and registry connections.
+                        service.close()
             except Exception as exc:
                 result["failure_reason"] = type(exc).__name__
                 result["termination_reason"] = "exception"
@@ -414,7 +439,7 @@ def run_cases(
         "run_dir": str(run_dir),
         "provider": provider,
         "usage_source": source,
-        "variant": "B0-compatible",
+        "variant": variant,
         "tasks": len(results),
         "passed": sum(r["task_success"] for r in results),
         "real_deepseek_status": deepseek_api_status(results, provider, source),

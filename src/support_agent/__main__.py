@@ -6,6 +6,7 @@ Refunds that need approval are shown to you as the reviewer, so you can try both
 from __future__ import annotations
 
 import argparse
+import os
 
 from support_agent.models import get_model
 from support_agent.service import SupportService
@@ -15,9 +16,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Chat with the support agent.")
     parser.add_argument("--customer", default="C100", help="customer id (C100 or C200 in the sample data)")
     parser.add_argument("--provider", help="offline | openai | azure")
+    parser.add_argument("--db", default=os.getenv("SUPPORT_DB", ".local/db/support.sqlite"))
+    parser.add_argument("--variant", choices=["B0-compatible", "B1"], default=os.getenv("SKILLMEM_VARIANT", "B1"))
     args = parser.parse_args()
 
-    service = SupportService(model=get_model(args.provider))
+    service = SupportService(model=get_model(args.provider), db_path=args.db, variant=args.variant)
     name = service.store.customers[args.customer]["name"]
     print(
         f"Chatting as {name} ({args.customer}). Try: 'Where is order 1002?' or 'Refund order 1001, it arrived broken'."
@@ -32,7 +35,9 @@ def main() -> None:
         print(f"bot > {result.reply}   [{', '.join(result.tools_used) or 'no tools'}]")
         if result.status == "awaiting_approval":
             answer = input(f"      reviewer: approve refund of {result.approval['amount']}? [y/n] ").strip().lower()
-            result = service.resolve_approval(thread_id, answer.startswith("y"), reviewer="you (cli)")
+            result = service.resolve_approval(
+                thread_id, answer.startswith("y"), reviewer="you (cli)", approval_id=result.approval.get("approval_id")
+            )
             print(f"bot > {result.reply}")
 
 

@@ -376,6 +376,7 @@ def main():
             cases,
             directory,
             provider="deepseek",
+            variant="B0-compatible",
             usage_source="provider",
             model_factory=lambda: get_model("deepseek", http_client=client),
         )

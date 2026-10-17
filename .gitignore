@@ -40,3 +40,7 @@ secrets.*
 /task_plan.md
 /findings.md
 /progress.md
+
+# OS session locks next to runtime SQLite files
+*.sqlite.locks/
+*.db.locks/

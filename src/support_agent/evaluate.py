@@ -11,15 +11,16 @@ import argparse
 import json
 from pathlib import Path
 
+from support_agent.execution import ExecutionLimits
 from support_agent.models import get_model
 from support_agent.service import SupportService, default_data_dir
 
 
-def run_scenarios(provider: str | None = None) -> list[dict]:
+def run_scenarios(provider: str | None = None, *, variant: str | None = None) -> list[dict]:
     scenarios = json.loads((default_data_dir() / "scenarios.json").read_text(encoding="utf-8"))
     results = []
     for scenario in scenarios:
-        service = SupportService(model=get_model(provider))
+        service = SupportService(model=get_model(provider), variant=variant)
         result = service.chat(scenario["customer"], scenario["message"])
         checks = {
             "tools": result.tools_used == scenario["expect_tools"],
@@ -36,6 +37,7 @@ def run_scenarios(provider: str | None = None) -> list[dict]:
                 "status": result.status,
             }
         )
+        service.close()
     return results
 
 
@@ -45,20 +47,31 @@ def main() -> None:
     parser.add_argument("--tasks", type=Path, help="Versioned multi-turn evaluation JSON")
     parser.add_argument("--output", type=Path, default=Path(".local/runs"))
     parser.add_argument("--repeat", type=int, default=1)
+    parser.add_argument("--variant", choices=["B0-compatible", "B1"])
+    parser.add_argument("--max-model-calls", type=int, default=8)
+    parser.add_argument("--max-tool-calls", type=int, default=8)
+    parser.add_argument("--tool-timeout", type=float, default=5)
+    parser.add_argument("--turn-timeout", type=float, default=120)
     args = parser.parse_args()
     if args.tasks:
         from support_agent.evaluation import run_cases
 
         summary = run_cases(
-            json.loads(args.tasks.read_text()), args.output, provider=args.provider or "offline", repeat=args.repeat
+            json.loads(args.tasks.read_text()),
+            args.output,
+            provider=args.provider or "offline",
+            repeat=args.repeat,
+            variant=args.variant,
+            limits=ExecutionLimits(args.max_model_calls, args.max_tool_calls, args.turn_timeout, args.tool_timeout),
         )
         print(f"{summary['passed']}/{summary['tasks']} tasks passed; {summary['run_dir']}/summary.json")
         raise SystemExit(0 if summary["passed"] == summary["tasks"] else 1)
-    results = run_scenarios(args.provider)
+    results = run_scenarios(args.provider, variant=args.variant)
     for r in results:
         mark = "PASS" if r["passed"] else f"FAIL ({', '.join(r['failed_checks'])})"
         print(f"{mark:<22} {r['name']:<36} {r['status']:<18} {', '.join(r['tools'])}")
     print(f"\n{sum(r['passed'] for r in results)}/{len(results)} scenarios passed")
+    raise SystemExit(0 if all(r["passed"] for r in results) else 1)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import json
 import os
 import re
 import threading
+import uuid
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from functools import wraps
@@ -200,6 +201,8 @@ class TraceRecorder(BaseCallbackHandler):
                     or payload.get("eligible") is False
                 )
                 self.emit("tool.execution_end", **context, result=result, outcome="rejected" if rejected else "success")
+                if payload.get("idempotent_replay"):
+                    self.emit("tool.idempotent_replay", **context)
                 return result
 
             return observed
@@ -230,8 +233,13 @@ class TraceRecorder(BaseCallbackHandler):
             return
         with self._lock:
             for m in messages:
-                if isinstance(m, ToolMessage) and m.tool_call_id not in self._observed:
-                    self._observed.add(m.tool_call_id)
+                if isinstance(m, ToolMessage):
+                    # Give each result its message identity before graph callbacks repeat it.
+                    # tool_call_id may legitimately repeat on replay; never deduplicate by it.
+                    m.id = m.id or str(uuid.uuid4())
+                    if m.id in self._observed:
+                        continue
+                    self._observed.add(m.id)
                     self.emit(
                         "tool.observation",
                         tool_call_id=m.tool_call_id,
@@ -274,6 +282,8 @@ class TraceRecorder(BaseCallbackHandler):
             "tool_reentry_count": count("tool.execution_start")
             - len({e.get("tool_call_id") for e in self.events if e["event"] == "tool.execution_start"}),
             "tool_paused_count": count("tool.paused"),
+            "tool_idempotent_replay_count": count("tool.idempotent_replay"),
+            "guard_rejected_count": count("execution.guard_rejected"),
             "skill_switch_count": 0,
             "usage_source": self.source,
             "cost": None,

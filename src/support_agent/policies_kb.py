@@ -40,7 +40,8 @@ def _terms(text: str) -> set[str]:
 
 
 class PolicyBase:
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: str | Path, *, chinese_aliases: bool = False) -> None:
+        self.chinese_aliases = chinese_aliases
         self.sections: list[tuple[str, str]] = []
         heading, lines = None, []
         for line in Path(path).read_text(encoding="utf-8").splitlines():
@@ -54,6 +55,16 @@ class PolicyBase:
             self.sections.append((heading, " ".join(lines).strip()))
 
     def search(self, query: str, top: int = 2) -> list[tuple[str, str]]:
+        if self.chinese_aliases:
+            aliases = {
+                "退款": "refund",
+                "退货": "return",
+                "取消": "cancellation",
+                "物流": "shipping",
+                "配送": "shipping",
+                "保修": "warranty",
+            }
+            query += " " + " ".join(word for key, word in aliases.items() if key in query)
         wanted = _terms(query)
         scored = [(len(wanted & _terms(f"{h} {h} {b}")), h, b) for h, b in self.sections]
         return [(h, b) for score, h, b in sorted(scored, key=lambda s: -s[0]) if score > 0][:top]

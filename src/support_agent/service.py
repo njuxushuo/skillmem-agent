@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import uuid
-from dataclasses import dataclass, field
+from contextlib import nullcontext
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from time import time
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
@@ -17,6 +20,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.errors import GraphRecursionError
 from langgraph.types import Command
 
+from support_agent.execution import ExecutionControl, ExecutionLimits, database_lock
 from support_agent.graph import build_graph
 from support_agent.models import get_model
 from support_agent.policies_kb import PolicyBase
@@ -89,6 +93,62 @@ class ConversationRegistry:
             rows = self._db.execute("SELECT thread_id, details FROM pending_approvals ORDER BY rowid").fetchall()
         return [{"thread_id": t, **json.loads(d)} for t, d in rows]
 
+    def setup_journal(self):
+        with self._lock, self._db:
+            self._db.execute(
+                "CREATE TABLE IF NOT EXISTS approval_journal "
+                "(approval_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, "
+                "details TEXT NOT NULL, state TEXT NOT NULL, decision TEXT, result TEXT)"
+            )
+
+    def journal_pending(self, thread_id, approval_id, details):
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT OR IGNORE INTO approval_journal VALUES (?, ?, ?, 'pending', NULL, NULL)",
+                (approval_id, thread_id, json.dumps(details)),
+            )
+
+    def approval(self, thread_id, approval_id=None):
+        with self._lock:
+            row = self._db.execute(
+                "SELECT approval_id, details, state, decision, result FROM approval_journal "
+                "WHERE thread_id=? AND (? IS NULL OR approval_id=?) ORDER BY rowid DESC LIMIT 1",
+                (thread_id, approval_id, approval_id),
+            ).fetchone()
+        if not row:
+            return None
+        return dict(
+            approval_id=row[0],
+            details=json.loads(row[1]),
+            state=row[2],
+            decision=json.loads(row[3]) if row[3] else None,
+            result=json.loads(row[4]) if row[4] else None,
+        )
+
+    def approval_count(self, thread_id):
+        with self._lock:
+            return self._db.execute("SELECT COUNT(*) FROM approval_journal WHERE thread_id=?", (thread_id,)).fetchone()[
+                0
+            ]
+
+    def decide(self, approval_id, decision):
+        with self._lock, self._db:
+            self._db.execute(
+                "UPDATE approval_journal SET state='resolving', decision=? WHERE approval_id=?",
+                (json.dumps(decision), approval_id),
+            )
+
+    def finish(self, approval_id, result=None):
+        with self._lock, self._db:
+            self._db.execute(
+                "UPDATE approval_journal SET state=?, result=? WHERE approval_id=?",
+                ("resolved" if result else "retryable", json.dumps(result) if result else None, approval_id),
+            )
+
+    def conversations(self):
+        with self._lock:
+            return self._db.execute("SELECT thread_id,customer_id FROM conversations").fetchall()
+
 
 class ConversationError(Exception):
     """The request doesn't fit the conversation (wrong customer, waiting for approval, unknown thread)."""
@@ -101,7 +161,7 @@ class ConversationError(Exception):
 @dataclass
 class ChatResult:
     thread_id: str
-    status: str  # answered | awaiting_approval
+    status: str  # answered | awaiting_approval | failed
     reply: str
     tools_used: list[str] = field(default_factory=list)
     approval: dict | None = None
@@ -116,33 +176,82 @@ class SupportService:
         data_dir: Path | None = None,
         db_path: str | None = None,
         trace: TraceRecorder | None = None,
+        variant: str | None = None,
+        limits: ExecutionLimits | None = None,
     ) -> None:
-        """db_path: SQLite file for conversations, checkpoints and pending approvals. None keeps them in memory."""
-        data_dir = data_dir or default_data_dir()
-        self.store = store or Store.load(data_dir / "store.json")
-        self.policy = policy or PolicyConfig()
-        tools = make_tools(self.store, PolicyBase(data_dir / "policies.md"), self.policy)
+        """B1 db_path persists business, receipts, budgets, approvals and checkpoints; None is ephemeral."""
+        with database_lock(db_path, "initialize"):
+            self.variant = variant or os.getenv("SKILLMEM_VARIANT", "B1")
+            if self.variant not in {"B0-compatible", "B1"}:
+                raise ValueError("Only B0-compatible and B1 are implemented")
+            if db_path:
+                Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+            data_dir = data_dir or default_data_dir()
+            self.store = store or Store.load(data_dir / "store.json")
+            self.policy = policy or PolicyConfig()
+            self.control = None
+            if self.variant == "B1":
+                self.store.persist(db_path)
+                self.control = ExecutionControl(db_path, limits or ExecutionLimits())
+            tools = make_tools(
+                self.store,
+                PolicyBase(data_dir / "policies.md", chinese_aliases=self.variant == "B1"),
+                self.policy,
+                variant=self.variant,
+            )
 
-        self.trace = trace
-        if trace is not None:
-            tools = trace.instrument_tools(tools)
+            self.trace = trace
+            if trace is not None:
+                tools = trace.instrument_tools(tools)
 
-        connection = sqlite3.connect(db_path or ":memory:", check_same_thread=False)
-        checkpointer: BaseCheckpointSaver = SqliteSaver(connection) if db_path else InMemorySaver()
-        self.registry = ConversationRegistry(connection)
-        self.graph = build_graph(model or get_model(), tools, self.store.customers, checkpointer)
+            connection = sqlite3.connect(db_path or ":memory:", check_same_thread=False)
+            checkpointer: BaseCheckpointSaver = SqliteSaver(connection) if db_path else InMemorySaver()
+            # Separate registry and saver connections: their transactions must not commit each other.
+            self._checkpoint_connection = connection
+            registry_connection = sqlite3.connect(db_path or ":memory:", check_same_thread=False)
+            self.registry = ConversationRegistry(registry_connection)
+            if self.control:
+                self.registry.setup_journal()
+            elif connection.execute("SELECT 1 FROM sqlite_master WHERE name='business_state'").fetchone():
+                registry_connection.close()
+                connection.close()
+                raise ValueError("B0 must not open a B1 database")
+            model = model or get_model()
+            if self.control and getattr(model, "max_retries", 0) != 0:
+                self.close()
+                raise ValueError("B1 requires model max_retries=0 so request budgets count all attempts")
+            self.graph = build_graph(
+                model, tools, self.store.customers, checkpointer, control=self.control, trace=trace
+            )
+
+            if self.control and db_path:
+                # Force SqliteSaver schema/WAL initialization before accepting concurrent requests.
+                checkpointer.get_tuple({"configurable": {"thread_id": "__initialize__"}})
 
     # ---------- customer side ----------
 
     def chat(self, customer_id: str, message: str, thread_id: str | None = None) -> ChatResult:
-        if customer_id not in self.store.customers:
-            raise ConversationError("Unknown customer.", 401)
         thread_id = thread_id or uuid.uuid4().hex
-        if self.registry.claim(thread_id, customer_id) != customer_id:
-            raise ConversationError("Conversation not found.", 404)  # don't reveal that it exists
-        if self.registry.is_pending(thread_id):
-            raise ConversationError("A refund in this conversation is waiting for approval.", 409)
-        return self._run({"messages": [HumanMessage(message)]}, customer_id, thread_id)
+        with self.control.session(thread_id) if self.control else nullcontext():
+            if customer_id not in self.store.customers:
+                raise ConversationError("Unknown customer.", 401)
+            if self.registry.claim(thread_id, customer_id) != customer_id:
+                raise ConversationError("Conversation not found.", 404)
+            if self.control:
+                self._reconcile(thread_id, customer_id)
+                approval = self.registry.approval(thread_id)
+                if approval and approval["state"] != "resolved":
+                    raise ConversationError("A refund is waiting for approval or recovery.", 409)
+                state = self.graph.get_state(self._config(customer_id, thread_id))
+                if state.next:
+                    raise ConversationError("Previous execution is incomplete; retry_turn before a new message.", 409)
+                if state.values.get("stop_reason") == "invalid_tool_call_id":
+                    raise ConversationError("Invalid tool protocol; start a new conversation.", 409)
+                self.control.start(thread_id)
+                return self._run({"messages": [HumanMessage(message)], "stop_reason": None}, customer_id, thread_id)
+            if self.registry.is_pending(thread_id):
+                raise ConversationError("A refund in this conversation is waiting for approval.", 409)
+            return self._run({"messages": [HumanMessage(message)]}, customer_id, thread_id)
 
     def history(self, customer_id: str, thread_id: str) -> list[dict]:
         if self.registry.owner(thread_id) != customer_id:
@@ -157,9 +266,29 @@ class SupportService:
     # ---------- staff side ----------
 
     def pending_approvals(self) -> list[dict]:
-        return self.registry.all_pending()
+        if not self.control:
+            return self.registry.all_pending()
+        pending = []
+        for thread_id, owner in self.registry.conversations():
+            with self.control.session(thread_id):
+                self._reconcile(thread_id, owner)
+                row = self.registry.approval(thread_id)
+                if row and row["state"] != "resolved":
+                    pending.append(
+                        {
+                            "thread_id": thread_id,
+                            **row["details"],
+                            "state": row["state"],
+                            "approval_id": row["approval_id"],
+                        }
+                    )
+        return pending
 
-    def resolve_approval(self, thread_id: str, approved: bool, reviewer: str, note: str | None = None) -> ChatResult:
+    def resolve_approval(
+        self, thread_id: str, approved: bool, reviewer: str, note: str | None = None, *, approval_id: str | None = None
+    ) -> ChatResult:
+        if self.control:
+            return self._resolve_b1(thread_id, approved, reviewer, note, approval_id)
         details = self.registry.take_pending(thread_id)
         if details is None:
             raise ConversationError("No refund is waiting for approval in this conversation.", 404)
@@ -168,21 +297,26 @@ class SupportService:
 
     # ---------- internals ----------
 
-    @staticmethod
-    def _config(customer_id: str, thread_id: str) -> dict:
+    def _config(self, customer_id: str, thread_id: str) -> dict:
         return {
             "configurable": {"thread_id": thread_id, "customer_id": customer_id},
-            "recursion_limit": MAX_STEPS_PER_TURN,
+            "recursion_limit": 2 * self.control.limits.model_calls + 4 if self.control else MAX_STEPS_PER_TURN,
         }
 
     def _run(self, graph_input, customer_id: str, thread_id: str) -> ChatResult:
         config = self._config(customer_id, thread_id)
+        if self.control:
+            config["configurable"]["deadline"] = time() + self.control.limits.turn_seconds
         if self.trace is not None:
             config["callbacks"] = [self.trace]
         before = len(self.graph.get_state(config).values.get("messages", []))
         try:
             self.graph.invoke(graph_input, config)
         except GraphRecursionError:
+            if self.control:
+                if self.trace:
+                    self.trace.emit("execution.stopped", reason="recursion_limit")
+                return ChatResult(thread_id, "failed", "Execution stopped. Please contact a colleague.")
             ticket = self.store.open_ticket(customer_id, f"Agent loop limit reached in conversation {thread_id}")
             return ChatResult(
                 thread_id,
@@ -196,12 +330,95 @@ class SupportService:
 
         if state.interrupts:
             details = state.interrupts[0].value
-            self.registry.add_pending(thread_id, details)
+            if self.control:
+                self.registry.journal_pending(thread_id, state.interrupts[0].id, details)
+                details = {**details, "approval_id": state.interrupts[0].id}
+            else:
+                self.registry.add_pending(thread_id, details)
             reply = (
                 f"I've asked a colleague to approve a refund of {details['amount']} {details['currency']} "
                 f"for order {details['order_id']}. You'll get an answer here shortly."
             )
             return ChatResult(thread_id, "awaiting_approval", reply, tools_used, details)
 
-        last_ai = next((m for m in reversed(new_messages) if isinstance(m, AIMessage) and not m.tool_calls), None)
+        if self.control and state.values.get("stop_reason"):
+            return ChatResult(
+                thread_id,
+                "failed",
+                f"Execution stopped: {state.values['stop_reason']}. Please contact a colleague before retrying.",
+                tools_used,
+            )
+        last_ai = next(
+            (
+                m
+                for m in reversed(new_messages or state.values.get("messages", []))
+                if isinstance(m, AIMessage) and not m.tool_calls
+            ),
+            None,
+        )
         return ChatResult(thread_id, "answered", str(last_ai.content) if last_ai else "", tools_used)
+
+    def _reconcile(self, thread_id, customer_id):
+        """Recover a committed graph interrupt even if saving the registry row failed/crashed."""
+        state = self.graph.get_state(self._config(customer_id, thread_id))
+        if state.interrupts:
+            self.registry.journal_pending(thread_id, state.interrupts[0].id, state.interrupts[0].value)
+
+    def _resolve_b1(self, thread_id, approved, reviewer, note, approval_id):
+        if type(approved) is not bool or not reviewer.strip():
+            raise ConversationError("A boolean decision and reviewer are required.", 400)
+        with self.control.session(thread_id):
+            owner = self.registry.owner(thread_id)
+            if not owner:
+                raise ConversationError("Conversation not found.", 404)
+            self._reconcile(thread_id, owner)
+            if approval_id is None and self.registry.approval_count(thread_id) > 1:
+                raise ConversationError("approval_id is required when a conversation has multiple approvals.", 409)
+            row = self.registry.approval(thread_id, approval_id)
+            if not row:
+                raise ConversationError("No refund is waiting for approval.", 404)
+            decision = dict(approved=approved, reviewer=reviewer, note=note)
+            if row["decision"] is not None and row["decision"] != decision:
+                raise ConversationError("Approval already has a different decision; it cannot be overwritten.", 409)
+            if row["state"] == "resolved":
+                if self.trace:
+                    self.trace.emit("approval.duplicate", approval_id=row["approval_id"])
+                return ChatResult(**row["result"])
+            self.registry.decide(row["approval_id"], decision)
+            if self.trace:
+                self.trace.emit("approval.resolving", approval_id=row["approval_id"], decision=decision)
+            try:
+                state = self.graph.get_state(self._config(owner, thread_id))
+                graph_input = Command(resume=decision) if state.interrupts else None
+                answer = self._run(graph_input, owner, thread_id)
+                if answer.status == "awaiting_approval":
+                    raise RuntimeError("approval_resume_did_not_progress")
+                self.registry.finish(row["approval_id"], asdict(answer))
+                if self.trace:
+                    self.trace.emit("approval.resolved", approval_id=row["approval_id"], status=answer.status)
+                return answer
+            except Exception:
+                self.registry.finish(row["approval_id"])
+                if self.trace:
+                    self.trace.emit("approval.retryable", approval_id=row["approval_id"])
+                raise
+
+    def retry_turn(self, customer_id: str, thread_id: str) -> ChatResult:
+        """Explicit checkpoint recovery after an infrastructure failure; never restart user input."""
+        if not self.control:
+            raise ConversationError("Recovery requires B1.", 400)
+        with self.control.session(thread_id):
+            if self.registry.owner(thread_id) != customer_id:
+                raise ConversationError("Conversation not found.", 404)
+            self._reconcile(thread_id, customer_id)
+            row = self.registry.approval(thread_id)
+            if row and row["state"] != "resolved":
+                raise ConversationError("Use the saved approval decision to resume.", 409)
+            return self._run(None, customer_id, thread_id)
+
+    def close(self):
+        self.registry._db.close()
+        self._checkpoint_connection.close()
+        if self.control:
+            self.control.close()
+            self.store.close()

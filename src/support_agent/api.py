@@ -28,13 +28,14 @@ class ChatRequest(BaseModel):
 
 
 class ApprovalDecision(BaseModel):
+    approval_id: str | None = Field(default=None, max_length=128)
     approved: bool
     reviewer: str = Field(min_length=1, max_length=100)
     note: str | None = Field(default=None, max_length=500)
 
 
 def create_app(service: SupportService | None = None, staff_key: str | None = None) -> FastAPI:
-    service = service or SupportService(db_path=os.getenv("SUPPORT_DB"))
+    service = service or SupportService(db_path=os.getenv("SUPPORT_DB", ".local/db/support.sqlite"))
     staff_key = staff_key or os.getenv("STAFF_API_KEY", "dev-staff-key")
     app = FastAPI(title="Support agent API", version="0.1.0")
 
@@ -72,7 +73,11 @@ def create_app(service: SupportService | None = None, staff_key: str | None = No
 
     @app.post("/approvals/{thread_id}", dependencies=[Depends(staff)])
     def decide(thread_id: str, decision: ApprovalDecision) -> dict:
-        return run(lambda: service.resolve_approval(thread_id, decision.approved, decision.reviewer, decision.note))
+        return run(
+            lambda: service.resolve_approval(
+                thread_id, decision.approved, decision.reviewer, decision.note, approval_id=decision.approval_id
+            )
+        )
 
     return app
 

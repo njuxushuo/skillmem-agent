@@ -44,3 +44,9 @@ def call(name: str, **args: Any) -> AIMessage:
 @pytest.fixture
 def service() -> SupportService:
     return SupportService()
+
+
+@pytest.fixture(autouse=True)
+def legacy_baseline(monkeypatch):
+    """Keep the original 91 assertions on B0; Stage 2 tests explicitly select B1."""
+    monkeypatch.setenv("SKILLMEM_VARIANT", "B0-compatible")

@@ -48,7 +48,9 @@ def _summary(order: Order) -> dict:
     }
 
 
-def make_tools(store: Store, policies: PolicyBase, policy: PolicyConfig) -> list[BaseTool]:
+def make_tools(
+    store: Store, policies: PolicyBase, policy: PolicyConfig, *, variant: str = "B0-compatible"
+) -> list[BaseTool]:
     @tool
     def list_my_orders(config: RunnableConfig) -> str:
         """List the current customer's orders, oldest first."""
@@ -100,6 +102,8 @@ def make_tools(store: Store, policies: PolicyBase, policy: PolicyConfig) -> list
     def request_refund(order_id: str, amount: float, reason: str, config: RunnableConfig) -> str:
         """Refund an order to the original payment method. Refunds above the approval threshold wait for a
         human to approve them. Only use after check_refund_eligibility says the order is eligible."""
+        if variant == "B1":
+            return _refund_b1(store, policy, order_id, amount, reason, config)
         customer_id = _customer(config)
         order = store.order_for(customer_id, order_id)
         if not order:
@@ -157,6 +161,8 @@ def make_tools(store: Store, policies: PolicyBase, policy: PolicyConfig) -> list
     @tool
     def cancel_order(order_id: str, config: RunnableConfig) -> str:
         """Cancel an order that hasn't shipped yet."""
+        if variant == "B1":
+            return _cancel_b1(store, order_id, config)
         order = store.order_for(_customer(config), order_id)
         if not order:
             return _not_found(order_id)
@@ -179,6 +185,21 @@ def make_tools(store: Store, policies: PolicyBase, policy: PolicyConfig) -> list
     @tool
     def escalate_to_human(summary: str, config: RunnableConfig) -> str:
         """Hand the conversation to a human colleague. Use when the customer asks for a person or you can't help."""
+        if variant == "B1":
+            settings = config.get("configurable", {})
+            customer = _customer(config)
+            key = "ticket:" + settings["operation_id"]
+            request = {"customer_id": customer, "summary": summary[:1000]}
+            with store.transaction(settings.get("tool_deadline")):
+                saved = store.operation(key, request)
+                if saved:
+                    return _json(**saved)
+                ticket = store.open_ticket(customer, summary[:1000])
+                result = dict(
+                    status="escalated", ticket_id=ticket, note="A colleague will reply by email within one working day."
+                )
+                store.remember(key, request, result)
+                return _json(**result)
         ticket = store.open_ticket(_customer(config), summary[:1000])
         return _json(
             status="escalated", ticket_id=ticket, note="A colleague will reply by email within one working day."
@@ -194,3 +215,96 @@ def make_tools(store: Store, policies: PolicyBase, policy: PolicyConfig) -> list
         search_policies,
         escalate_to_human,
     ]
+
+
+def _refund_b1(store, policy, order_id, amount, reason, config):
+    customer = _customer(config)
+    deadline = config.get("configurable", {}).get("tool_deadline")
+    try:
+        value = Decimal(str(amount)).quantize(Decimal("0.01"))
+        if not value.is_finite() or value <= 0:
+            raise InvalidOperation
+    except (InvalidOperation, ValueError):
+        return _json(status="rejected", reason="The refund amount must be a finite positive number.")
+    request = {"customer_id": customer, "amount": str(value)}
+    # A successful refund is one business operation per order, independent of unstable LLM call IDs.
+    key = f"refund:{customer}:{str(order_id).strip().lstrip('#')}"
+
+    def validate():
+        order = store.order_for(customer, order_id)
+        if not order:
+            raise ValueError("No order was found on this customer's account.")
+        saved = store.operation(key, request)
+        if saved:
+            return order, saved
+        eligibility = refund_eligibility(order, store.today, policy)
+        if not eligibility.eligible:
+            raise ValueError(eligibility.reason)
+        if value > eligibility.max_amount:
+            raise ValueError(f"The most that can be refunded is {eligibility.max_amount}.")
+        return order, None
+
+    try:
+        with store.transaction(deadline):
+            order, saved = validate()
+            if saved:
+                return _json(**saved)
+            details = dict(
+                type="refund_approval",
+                customer_id=customer,
+                order_id=order.id,
+                item=order.item,
+                amount=str(value),
+                currency=order.currency,
+                reason=reason[:500],
+            )
+        approved_by = "policy"
+        if needs_approval(value, policy):
+            # The transaction is closed before the native interrupt. Nothing has been paid.
+            decision = interrupt(details)
+            if decision.get("approved") is not True:
+                return _json(status="denied", note=decision.get("note") or "A colleague declined this refund.")
+            approved_by = decision.get("reviewer") or "reviewer"
+        with store.transaction(deadline):
+            order, saved = validate()  # re-read, recheck amount/ownership/policy AFTER approval
+            if saved:
+                return _json(**saved)
+            refund = store.record_refund(order, value, reason[:500], approved_by)
+            result = dict(
+                status="refunded",
+                refund_id=refund.id,
+                order_id=order.id,
+                amount=str(value),
+                currency=order.currency,
+                approved_by=approved_by,
+                arrives="within 5 working days",
+            )
+            store.remember(key, request, result)
+            return _json(**result)
+    except ValueError as exc:
+        return _json(status="rejected", reason=str(exc))
+
+
+def _cancel_b1(store, order_id, config):
+    customer = _customer(config)
+    deadline = config.get("configurable", {}).get("tool_deadline")
+    with store.transaction(deadline):
+        order = store.order_for(customer, order_id)
+        if not order:
+            return _not_found(order_id)
+        key, request = f"cancel:{customer}:{order.id}", {"customer_id": customer}
+        saved = store.operation(key, request)
+        if saved:
+            return _json(**saved)
+        allowed, reason = can_cancel(order)
+        if not allowed:
+            return _json(status="rejected", order_id=order.id, reason=reason)
+        store.cancel(order)
+        result = dict(
+            status="cancelled",
+            order_id=order.id,
+            item=order.item,
+            note="Payment will be released within 3 working days.",
+        )
+        store.remember(key, request, result)
+        return _json(**result)

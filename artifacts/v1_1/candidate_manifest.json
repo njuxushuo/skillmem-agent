@@ -34,7 +34,8 @@
     "tasks_total": 7,
     "ruff_check": "pass",
     "ruff_format_files": 46,
-    "pip_check": "pass"
+    "pip_check": "pass",
+    "final_log_sha256": "5a97622e6aaafb166f6ca8c3129da4850a99c5b7c68efdeb10c5d14f2284a680"
   },
   "freeze_checks": {
     "protected_files_unchanged": 30,
@@ -67,5 +68,9 @@
   },
   "review_start_git_sha": "1cffae39e684621d612bfaa21085ddae7a832bb6",
   "additional_rounds_authorized": 2,
-  "additional_rounds_used": 2
+  "additional_rounds_used": 2,
+  "candidate_source_commit": "3315e297168bf5f72c71b1ca73fc95a9d9853693",
+  "r4_snapshot_commit": "b7899daf46d6b0692fc108dc2383134d2fab6022",
+  "push_status": "failed_https_authentication",
+  "remote_branch_at_start": "1cffae39e684621d612bfaa21085ddae7a832bb6"
 }

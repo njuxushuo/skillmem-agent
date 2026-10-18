@@ -2,6 +2,16 @@
 
 **当前结论：R4 FAIL，R5 FAIL。** 用户以 `1cffae39e684621d612bfaa21085ddae7a832bb6` 为起点批准的两轮额外修复与独立验收均已使用；源码已停止修改，没有 R6，没有进入 Phase B–E，未达到 TECH_PASS 或 EVAL_READY。新增付费 API 请求 **0**。本节为最新状态，下方 R3/R4 文本仅保留各轮当时的记录，不覆盖本节结论。
 
+## 本轮 Git 最终保存与远端状态
+
+- Repository：<https://github.com/njuxushuo/skillmem-agent>；Branch：`v1.1/phase-a-blocked`。
+- R4失败快照：`b7899daf46d6b0692fc108dc2383134d2fab6022`。
+- R5候选源码、最终失败测试、完整诊断和独立报告提交：**`3315e297168bf5f72c71b1ca73fc95a9d9853693`**。随后只追加交付状态；最终文档提交以`git log -1`为准，避免报告自引用SHA。
+- 当前main仍为V1的`a34d5dab42100dc03820453976edd5940e0afd54`。起点远端同名分支已核对为`1cffae39e684621d612bfaa21085ddae7a832bb6`。
+- 已正常推送本分支，返回exit128：`could not read Username for 'https://github.com': terminal prompts disabled`。日志`.local/v1_1/a/r5/push.log`。本执行环境缺少非交互HTTPS写认证，未强推或绕过认证；本轮新提交仅本地保存。
+- 新提交远端CI：**not_run**，无已验证成功的CI URL；起点只读Actions API为403。工作流已支持v1.1分支触发，但未推送不构成执行证明。
+- **Tag：未创建**。两轮均未通过技术Gate，不创建任何通过/正式完成标签；原10个Tag未改变。没有合入main或发布完成版本。
+
 ## R4/R5 实现与独立验收
 
 | 轮次 | 实现 | 独立验收与决定 |

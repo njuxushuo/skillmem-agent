@@ -1,3 +1,5 @@
+> **R4状态补充**：本文件下文为R3独立最终审查的保留记录。用户已追加R4/R5授权；R4独立审查仍FAIL（746通过/7失败），当前详见[v1_1_a_oracle_ci.md](v1_1_a_oracle_ci.md)。R5尚待执行，B–E未开始，无付费调用。
+
 # V1.1 独立最终审查：Phase A 阻断交付
 
 审查日期：2026-10-18（Asia/Shanghai）。角色：**独立 Reviewer / architecture**，与 engineering 实现角色、reference 测试角色及协调者分离。本报告是三轮门禁后的交付证据一致性核查，**不是第四轮语义审查或修复**。

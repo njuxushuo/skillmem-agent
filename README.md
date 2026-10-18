@@ -1,6 +1,6 @@
 # SkillMem Agent
 
-**V1.1 当前状态：Phase A 第三轮仍未通过，已停止在 G-A FAIL / BLOCKED。** 最终离线测试 677 通过、3 失败；原 564 项、11 场景和 7 任务仍通过。候选 Oracle V2 的历史复判不是正式新成绩；B–E 未执行，未达到 EVAL_READY，本轮新增付费请求 0。见 [Phase A 阻断报告](docs/reports/v1_1_a_oracle_ci.md)、[最终审查](docs/reports/v1_1_final_review.md)和[候选评测协议](docs/evaluation_protocol_v1_1.md)。下述 Stage 5 数字为保留的 V1 历史结果。
+**V1.1 当前状态：Phase A 追加 R4 仍未通过，已停止在 G-A FAIL / BLOCKED。** 最终离线测试 746 通过、7 失败；原 564 项、11 场景和 7 任务仍通过。候选 Oracle V2 的历史复判不是正式新成绩；B–E 未执行，未达到 EVAL_READY，本轮新增付费请求 0。见 [Phase A 阻断报告](docs/reports/v1_1_a_oracle_ci.md)、[最终审查](docs/reports/v1_1_final_review.md)和[候选评测协议](docs/evaluation_protocol_v1_1.md)。下述 Stage 5 数字为保留的 V1 历史结果。
 
 基于 [nitanandsinghupw/langgraph-support-agent](https://github.com/nitanandsinghupw/langgraph-support-agent) 的轻量单 Agent 电商售后研究项目，沿用 LangGraph、原8个业务工具、政策校验和人工审批。
 

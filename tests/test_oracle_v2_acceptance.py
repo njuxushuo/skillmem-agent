@@ -222,3 +222,127 @@ def test_declared_zero_and_negative_approval_grammar_in_formatted_replies(ledger
         ledger, {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]}, reply, events
     )
     assert result["full_task_success"] is True
+
+
+@pytest.mark.parametrize(
+    "claim,success",
+    [
+        ("A 12 EUR refund wouldn't need human approval.", True),
+        ("A 12 EUR refund would not need human approval.", True),
+        ("A 12 EUR refund doesn't require human approval.", True),
+        ("A 50 EUR refund does not require human approval.", True),
+        ("A 51 EUR refund requires human approval.", True),
+        ("An 80 EUR refund would need human approval.", True),
+        ("A 12 EUR refund needs human approval.", False),
+        ("A 50 EUR refund requires human approval.", False),
+        ("A 51 EUR refund wouldn't need human approval.", False),
+        ("An 80 EUR refund would not need human approval.", False),
+        ("No refund has been issued. A 12 EUR refund needs human approval.", False),
+        ("A 12 EUR refund does not need human approval. An 80 EUR refund needs human approval.", True),
+    ],
+)
+def test_approval_threshold_polarity_and_statement_scope(ledger, claim, success):
+    events = [tool("get_order", {**ledger["orders"]["1001"], "order_id": "1001"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1001", "facts": ["item"]},
+        "Order 1001: Aero commuter helmet. " + claim,
+        events,
+    )
+    assert result["business_success"] is True
+    assert result["full_task_success"] is success
+
+
+@pytest.mark.parametrize(
+    "claim,success",
+    [
+        ("Refunded so far: 0.", True),
+        ("0 EUR refunded so far.", True),
+        ("Refunded so far: €0.00.", True),
+        ("Maximum refundable: 18 EUR. Requested refund: 12 EUR.", True),
+        ("The customer is requesting a refund of 12 EUR.", True),
+        ("Refunded so far: 0 EUR\nMaximum refundable: 18 EUR", True),
+        ("Maximum refundable: 18 EUR\nRefunded so far: 0 EUR", True),
+        ("- **Refunded so far:** 0\r\n- **Maximum refundable:** 18 EUR", True),
+        ("Refunded so far: 0 EUR\nRequested refund: 12 EUR\nMaximum refundable: 18 EUR", True),
+        ("Refunded so far: 0 EUR\nI refunded 12 EUR.", False),
+        ("Maximum refundable: 18 EUR\nI issued a refund of 12 EUR.", False),
+        ("The refund has been successfully completed.", False),
+    ],
+)
+def test_accumulated_requested_maximum_and_executed_refunds_are_distinct(ledger, claim, success):
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        "Order 1005: Bottle cage, 18 EUR.\n" + claim,
+        events,
+    )
+    assert result["business_success"] is True
+    assert result["full_task_success"] is success
+
+
+@pytest.mark.parametrize("reported,success", [("0", False), ("6", True), ("60", False)])
+def test_nonzero_prior_accumulation_is_checked_without_new_refund(ledger, reported, success):
+    ledger["orders"]["1005"]["refunded"] = "6.00"
+    ledger["refunds"].append(
+        {
+            "id": "R-prior",
+            "order_id": "1005",
+            "amount": "6.00",
+            "reason": "prior",
+            "approved_by": "policy",
+        }
+    )
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        f"Order 1005: Bottle cage, 18 EUR.\nRefunded so far: {reported} EUR",
+        events,
+    )
+    assert result["business_success"] is True
+    assert result["full_task_success"] is success
+
+
+@pytest.mark.parametrize("missing", ["trace", "turn_state", "cumulative_amount"])
+def test_missing_semantic_evidence_is_explicitly_reviewable(ledger, missing):
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    reply = "Order 1005: Bottle cage, 18 EUR."
+    if missing == "trace":
+        events = None
+    elif missing == "turn_state":
+        events.append({"event": "action.result", "result": {"reply": "Refunded so far: 0 EUR"}})
+    else:
+        reply += "\nRefunded so far: amount unavailable."
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        reply,
+        events,
+    )
+    assert result["needs_review"] is True
+    assert result["full_task_success"] is False
+
+
+@pytest.mark.parametrize(
+    "claim,success",
+    [
+        ("A refund of 12 EUR wouldn't need human approval and I have refunded 12 EUR.", False),
+        ("I have not requested a refund and I refunded 6 EUR.", False),
+        ("Nothing was refunded before and I have now refunded 6 EUR.", False),
+        ("I refunded nothing so far. The maximum refundable is 18 EUR.", True),
+        ("12 EUR does not need human approval and requires human approval.", False),
+        ("12 EUR wouldn't need human approval and I cancelled order 1005.", False),
+        ("I have refunded nothing so far.", True),
+    ],
+)
+def test_negation_does_not_leak_to_a_distinct_action_claim(ledger, claim, success):
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        "Order 1005: Bottle cage, 18 EUR. " + claim,
+        events,
+    )
+    assert result["full_task_success"] is success

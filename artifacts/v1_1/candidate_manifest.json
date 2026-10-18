@@ -1,18 +1,18 @@
 {
-  "status": "G-A_BLOCKED",
+  "status": "G-A_BLOCKED_R4",
   "candidate_accepted": false,
   "phase_b_to_e": "not_run",
   "eval_ready": false,
-  "review_rounds": 3,
+  "review_rounds": 4,
   "baseline_git_sha": "a34d5dab42100dc03820453976edd5940e0afd54",
   "branch": "v1.1/phase-a-blocked",
   "tag": null,
   "tag_reason": "Gate not passed; no accepted phase tag created",
   "oracle": {
-    "oracle_version": "2.0.0",
-    "oracle_hash": "e13e7619bfb6d34e75aad1e5567336ed9dada3fff10546d48d1c68389adb1234",
+    "oracle_version": "2.0.1",
+    "oracle_hash": "1db795021a32ccd4f11e2526f9a7cca6aec501a8433b66df546159a0d52980c7",
     "oracle_source_hashes": {
-      "oracle_v2.py": "b37f97396eeb96c5314aa9fee70449e192351515ad6a5f0bb12e6b7f29115480",
+      "oracle_v2.py": "2ca12a0c150e14084b244c7dd775003214e435e45217e69aea65dd069c9257f4",
       "evaluation.py": "af1a6baee3e196aa91a5d4973f7b1102a054474dbaca6d78be42d5c422248a39",
       "policy.py": "2dbfba44de9d73ac29b6425547be559acb2c8cb95a32adfedba60b825ecb48a0",
       "store.py": "d6e971f259b7ef2ed3e7bba4950f6c93d0ff3def93234bc34ee304357173d25a"
@@ -23,11 +23,11 @@
   "remote_ci": "not_run",
   "tests": {
     "original_passed": 564,
-    "new_passed": 113,
-    "new_failed": 3,
-    "full_passed": 677,
-    "full_failed": 3,
-    "seconds": 28.04,
+    "new_passed": 182,
+    "new_failed": 7,
+    "full_passed": 746,
+    "full_failed": 7,
+    "seconds": 28.12,
     "scenarios_passed": 11,
     "scenarios_total": 11,
     "tasks_passed": 7,
@@ -42,19 +42,24 @@
     "independent_old_manifest_files_unchanged": 54,
     "independent_historical_artifacts_unchanged": 36
   },
-  "warning": "Rejected candidate diagnostics, not accepted corrected scores or independent new model results. See phase_a_blockers.json and reports. No fourth repair round performed.",
+  "warning": "R4 rejected candidate. Seven semantic regressions retained; R5 explicitly authorized but not yet executed. Post-hoc diagnostics, not new model results. Unknown is not model failure.",
   "files": {
-    "artifacts/v1_1/audit_results.csv": "a9588f5faefd850c38fae313247ca37440d55639aa490a14c7b0aabd15c404df",
-    "artifacts/v1_1/audit_summary.json": "49dfbf8349d127d5c0a18d22cfe803769c3c801c98535ed231e3cb315201f2cb",
+    "artifacts/v1_1/audit_results.csv": "5125b92261cd75f7d48e7ccef4f49b12332803f23d0ebb9554e17186e23fc9ed",
+    "artifacts/v1_1/audit_summary.json": "1ecf2b254a30961ac345ff58077b138ceb53aea17c35355dd0fae69a37eaa18b",
     "artifacts/v1_1/expanded_pass_findings.json": "912d3a05a4cbfea7d998d0343f4417e1772cc66675fe430d3a18c7083a071853",
     "artifacts/v1_1/phase_a_blockers.json": "93ae2d61f7e4f470050799a128bd612f8e7c8385ca1a299865bd24b08f937097",
     "artifacts/v1_1/reviewer_pass_audit.json": "be923c332baf9e1bba30f26712be56015e68cb2298c39295daa2d99b5ba0cd97",
     "artifacts/v1_1/test_pass_audit.json": "97430f896145cbd2651ee175a8345461f3963a34c33be1bb8218f870621171ff",
     "docs/optimization_plan_v1_1.md": "951777fccf72de95d514439a8202ff74731c5aed177378f2caedf0e8d2bd5520",
     "scripts/audit_v1_results.py": "b00e83e0fba11f8d27128615f7029cc0332e34ca7590be82c78ee6a366e65d5f",
-    "src/support_agent/oracle_v2.py": "b37f97396eeb96c5314aa9fee70449e192351515ad6a5f0bb12e6b7f29115480",
-    "tests/test_oracle_v2.py": "1c9f54b458f02900355793798ba20d3d78b8c9d020fe84ac8b975d2f61a18d01",
-    "tests/test_oracle_v2_acceptance.py": "05c11881b6e57f893a3cc855efa47134854998e819c012b1e63a9bcbe8a5bfc2",
-    "tests/test_v1_audit.py": "8f301654afeea0691167a2e7695b06ed88be74f3e29e6f8997ba8d45ab269f33"
-  }
+    "src/support_agent/oracle_v2.py": "2ca12a0c150e14084b244c7dd775003214e435e45217e69aea65dd069c9257f4",
+    "tests/test_oracle_v2.py": "02391b0a67ee36132751b5e73de862b4576e71e17d5aa264d9181ac05578054e",
+    "tests/test_oracle_v2_acceptance.py": "4a6d82c681f4e76ff81cc419febe7df0e086409590eebe5d049e39cb5702206f",
+    "tests/test_v1_audit.py": "8f301654afeea0691167a2e7695b06ed88be74f3e29e6f8997ba8d45ab269f33",
+    ".github/workflows/ci.yml": "8d5abd08d78eb9d5999e1d8b6a5903a660b70373f1e126ac8a5192e15c5cf8bf",
+    "artifacts/v1_1/r4_history_review.json": "605a5840abac51f7a3bd4596ca6ad6d1ccf6c8cd81e4b684fad7c3c7f1d0a429",
+    "artifacts/v1_1/r4_blockers.json": "daa1eecc440b071b675925d2a241cdef5bd2f8dfd57bb008fac2fadb4b226032",
+    "artifacts/v1_1/r4_test_history_review.json": "8a6a24eea1097ba95e0e6679269fc12e25d264d272c52a193088d0ace5772184"
+  },
+  "review_start_git_sha": "1cffae39e684621d612bfaa21085ddae7a832bb6"
 }

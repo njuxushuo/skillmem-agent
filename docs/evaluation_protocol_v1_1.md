@@ -13,7 +13,7 @@
 - `response_facts_pass`：关键事实、拒绝理由及中间动作声明是否有证据。
 - `completion_pass` 与 `full_task_success`：按任务适用规则联合判定；保留逐规则原因及 `needs_review`。
 
-候选标识为 `2.0.0`，组合内容哈希见 `artifacts/v1_1/candidate_manifest.json`，**不是已验收发布版本**。内容哈希同时覆盖 V2 与其依赖的 V1 evaluation、policy、store。正则模式仅支持受约束语义，不能作为通用自然语言真实性证明。当前有三个确定误拒，详见阶段报告和阻断测试。
+R4 候选标识为 `2.0.1`，组合内容哈希见 `artifacts/v1_1/candidate_manifest.json`，**不是已验收发布版本**。内容哈希同时覆盖 V2 与其依赖的 V1 evaluation、policy、store。正则模式仅支持受约束语义，不能作为通用自然语言真实性证明。当前有七个确定误判，详见阶段报告和阻断测试。
 
 ## 只读历史复判
 
@@ -31,4 +31,4 @@
 
 B–E 全部 `not_run`。尚未冻结新 Dev/Holdout、M-opt/MS-opt 或因素配置；未形成成本归因或优化收益结论。V1 的真实 Provider Usage 保持原记录，本阶段没有新增 Provider Usage、模型请求或费用。
 
-只有重新获准修复 Phase A 并通过 Gate 才能继续后续阶段。未来真实 Dev/Holdout 必须单独取得请求次数及金额上限；旧授权不复用。当前既不是 `EVAL_READY`，也不是 `G-E_REAL_LLM_PASS`。
+用户已追加 R4/R5 两轮离线授权；R4 未通过，仍须最后 R5 修复并通过 Gate 才能继续后续阶段。未来真实 Dev/Holdout 必须单独取得请求次数及金额上限；旧授权不复用。当前既不是 `EVAL_READY`，也不是 `G-E_REAL_LLM_PASS`。

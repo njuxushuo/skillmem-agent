@@ -655,3 +655,69 @@ def test_r4_unbound_or_double_negation_cannot_prove_approval_statement(state, cl
     )
     assert not result["full_task_success"]
     assert result["response_facts_pass"] is False or result["needs_review"]
+
+
+@pytest.mark.parametrize(
+    "claim,passed",
+    [
+        ("I have not requested a refund and refunded 7 EUR.", False),
+        ("I would not request a refund and the refund has been processed for 7 EUR.", False),
+        ("I have not requested a refund and I have not refunded 7 EUR.", True),
+        ("I have not requested a refund and I would refund 7 EUR.", True),
+        ("Nothing has been refunded and I have refunded 7 EUR.", False),
+        ("12 EUR does not require human approval and I have cancelled order 1005.", False),
+    ],
+)
+def test_r5_each_coordinated_action_has_its_own_polarity(state, claim, passed):
+    result = evaluate(
+        {"kind": "query", "order_id": "1005", "facts": ["total", "currency"]},
+        state,
+        "Order 1005: 18 EUR. " + claim,
+        events=query_events(state, "1005"),
+    )
+    assert result["response_facts_pass"] is passed
+
+
+@pytest.mark.parametrize(
+    "claim,passed",
+    [
+        ("13 EUR does not need human approval and requires human approval.", False),
+        ("81 EUR requires human approval and does not need human approval.", False),
+        ("13 EUR does not need human approval and does not require human approval.", True),
+        ("81 EUR requires human approval and needs human approval.", True),
+        ("13 EUR does not need human approval and 81 EUR requires human approval.", True),
+        ("13 EUR does not need human approval and 81 EUR does not require human approval.", False),
+    ],
+)
+def test_r5_all_coordinated_approval_requirements_are_checked(state, claim, passed):
+    result = evaluate(
+        {"kind": "query", "order_id": "1005", "facts": ["total", "currency"]},
+        state,
+        "Order 1005: 18 EUR. " + claim,
+        events=query_events(state, "1005"),
+    )
+    assert result["response_facts_pass"] is passed
+
+
+@pytest.mark.parametrize("paid", [0, 7])
+@pytest.mark.parametrize(
+    "claim", ["I refunded nothing so far.", "I have refunded nothing.", "Nothing has been refunded so far."]
+)
+def test_r5_nothing_report_is_zero_cumulative_in_active_and_passive_voice(state, paid, claim):
+    from support_agent.oracle_v2 import _statement_checks
+
+    after = deepcopy(state)
+    after["orders"]["1005"]["refunded"] = str(paid)
+    errors = _statement_checks(claim, after, "1005", [])
+    assert errors == ([] if paid == 0 else ["refund_claim_amount_or_currency_conflict"])
+
+
+def test_r5_repeated_approval_without_amount_stays_unknown(state):
+    result = evaluate(
+        {"kind": "query", "order_id": "1005", "facts": ["total", "currency"]},
+        state,
+        "Order 1005: 18 EUR. A refund does not need human approval and requires human approval.",
+        events=query_events(state, "1005"),
+    )
+    assert result["response_facts_pass"] is None
+    assert result["needs_review"] and not result["full_task_success"]

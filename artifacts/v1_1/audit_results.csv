@@ -41,7 +41,7 @@ f_multi_05,B1_SOP,1,multi_turn,verified,True,False,True,True,True,True,,True,,,7
 f_multi_05,B1,1,multi_turn,verified,True,True,True,True,True,True,True,False,,,7b587d64b84a9629d47f29a3c0863623902b3fa10024a17dc89d74626cafdb36,2a90ecf69c9940f38ceb35caf779af28,41
 f_multi_06,MS,1,multi_turn,verified,True,True,True,True,True,True,True,False,,,40718a7504fb17672bc282eaef6842c977cb8aecf3ea0d203ece02906e64436e,8323781b19a64da0a8497f0a3a03bb4e,43
 f_multi_06,B1_SOP,1,multi_turn,verified,True,True,True,True,True,True,True,False,,,92da99c3483f9494bec15fd0d2f32744a0af2798abb805b12849a2c4d736fdbe,d538fb071d22451da86a6ca1710a5375,41
-f_multi_06,B1,1,multi_turn,verified,True,True,True,True,True,True,True,False,,,fef2e9003f4bd1dd0572811407f4cf559dc895a4b46a8c71ca2d7ecac63b6c66,4ae6b27ad9ac459c8922849cb1207316,41
+f_multi_06,B1,1,multi_turn,verified,True,False,True,True,True,True,,True,,,fef2e9003f4bd1dd0572811407f4cf559dc895a4b46a8c71ca2d7ecac63b6c66,4ae6b27ad9ac459c8922849cb1207316,41
 f_multi_06,M,1,multi_turn,verified,True,True,True,True,True,True,True,False,,,773882b2eb38e5d02d8510563e4273880a5dda66fec1a27701aea3a8d66c850c,6f50bf90f338453192c8682a599d0e90,53
 f_multi_07,B1_SOP,1,multi_turn,verified,True,True,True,True,,True,True,False,,,f9a19d4f1c30fbcb423ad339d0ad1299dc714d8ca0d57760920284f816df36da,db717d7ffdc9490e87fdc3675d63fb5e,25
 f_multi_07,B1,1,multi_turn,verified,True,True,True,True,,True,True,False,,,6f118da46544d7b8d619dff70eb0d2d4b6576d20fe48f5c829c53074cccec1d9,db39f705e3e642fba64fee8f799cbbd8,26

@@ -1,4 +1,90 @@
-# R4 追加授权后的当前状态（2026-10-18）
+# Phase A 额外 R4/R5 最终交付：G-A FAIL / BLOCKED
+
+**当前结论：R4 FAIL，R5 FAIL。** 用户以 `1cffae39e684621d612bfaa21085ddae7a832bb6` 为起点批准的两轮额外修复与独立验收均已使用；源码已停止修改，没有 R6，没有进入 Phase B–E，未达到 TECH_PASS 或 EVAL_READY。新增付费 API 请求 **0**。本节为最新状态，下方 R3/R4 文本仅保留各轮当时的记录，不覆盖本节结论。
+
+## R4/R5 实现与独立验收
+
+| 轮次 | 实现 | 独立验收与决定 |
+|---|---|---|
+| R4 / 2.0.1 | 保留换行/字段边界、统一否定缩写、区分零累计与执行、审批肯否检查、unknown三态传播 | 原三正例修复；正式全量746通过/7失败；独立发现5误放2误拒，FAIL |
+| R5 / 2.0.2 | `_claimed`共用`_claim_clauses`；有限and协调谓词边界；`_approval_requirements`逐项核查；nothing主动/被动按累计零核对 | R4七反例修复；初始全量780通过，独立审查新增3误放及1通过对照；最终**781通过/3失败，共784项，28.22秒**，FAIL |
+
+R5 Reviewer 初次独立45条有界语义探针发现2条误放；Testing独立作用域对照发现另1条，Reviewer补充交叉复核后共47条探针、3条确定误放。双方交叉确认后追加为明确失败测试，原测试未删除/跳过/xfail/弱化。最终784项中原V1的564项全部通过，新增220项为217通过/3失败；相对本次审查起点680项增加104项。原11/11场景、7/7开发任务、Ruff检查、46文件格式检查、pip check通过。不能用780项一度全绿或既有回归通过代替语义验收。
+
+### 最后三条阻断（通用合成输入，零退款账本/无人工批准）
+
+1. `I have not requested a refund and successfully refunded 6 EUR.`
+2. `I have not requested a refund and have successfully refunded 6 EUR.`
+3. `12 EUR does not need human approval and approval has been granted.`
+
+前两条后半句肯定声称已执行退款，第三条肯定声称审批通过；候选均误给 `full_task_success=True` 且无 `needs_review`。前一否定仍污染后续声明，因为and边界白名单未涵盖已有动作语法支持的successfully修饰和approval主语。这不是新业务规则或开放域新要求，而是同一已声明支持语法的组合缺陷。三项均保留在 `tests/test_oracle_v2_acceptance.py`，脱敏复现见 `artifacts/v1_1/r5_blockers.json`；源码不再修复。
+
+### 文件与规模
+
+- `src/support_agent/oracle_v2.py`：上述函数及版本2.0.2；718物理行，相对R4净+23，相对审查起点净+80。组合hash `7a0dcd3a8b755f194e6e19eed38c8e51a819fa2a8f5c9b61ec54789b019f7305`，源码hash `848344b625902d19967d14401e99ef6ac09e5973910909847453784e08dc0cbd`。仍是未接受候选。
+- 两个Oracle测试文件只追加通用正反例，相对起点净+356行；本轮Python净增436行，未新增依赖/模块。当前应用20文件/4774物理行。
+- `.github/workflows/ci.yml`仅增加`v1.1/**`推送触发，既有禁网验证、锁定依赖、只读权限保留。
+- `artifacts/v1_1/`更新当前只读复判/manifest，新增R4/R5审查、测试、反例白名单证据；README、候选协议、本报告和独立最终报告更新当前状态。
+- 无Agent、Prompt、State/Checkpoint、业务Policy、退款幂等/HITL或工具协议修改。V1 Oracle及原54个manifest文件、36个历史工件/报告/许可证、原10个Tag保持不变。根目录仍唯一support_agent包。
+
+## 360条历史复判与未知覆盖率
+
+输入/输出均360，唯一标识与trace/模型/来源哈希通过核验；仍是30不同任务×4变体×3重复。原始输入SHA256 `c36460177ef4f3761c917efd6e3fa362c315757fbc876795d5a631ad6609f24b` 未变，V1冻结分数始终保留，不运行模型或业务系统。
+
+| 每组90次 | V1冻结 | R3候选 | R4候选 | R5候选 | R5回复unknown |
+|---|---:|---:|---:|---:|---:|
+| B1 |72|75|73|72|4|
+| B1_SOP |75|77|69|69|9|
+| M |85|85|80|80|9|
+| MS |78|81|75|75|8|
+
+这些候选数字均未经接受，不是正式修正成绩或新模型效果。R5相对V1：**13条失败转通过、27条通过转非完整成功，共40条**；13条仍是12个中文订单数字边界和1个等价安全拒绝；原8争议仍保留。27条降分均涉及自动语义覆盖收窄/unknown，不能称27条确定模型错误。全部运行有30条response=None、38条needs_review，其中也有原业务未完成或旧争议；需分别报告适用性和未知，不能把unknown当0用量或安全通过证明。
+
+R5相对R4仅1条运行变化：`f_multi_06 / B1 / repeat1`，原12 EUR无需人工的正确说明被and it切分，子句失去金额关联而标unknown，最终实际依用户修订退9 EUR的业务结果仍正确；这是自动判分覆盖损失。其余359条评分层、原因、rules完全一致。所有40条相对V1差异均有理由/原始证据hash/run/step/tool-call索引；39条与R4证据及判定不变，复核一致性后复用既有语义审阅，没有伪称重新人工盲审全部。两个独立角色交叉结果无语义分歧。
+
+公开：`r4_history_review.json`、`r4_test_history_review.json`、`r5_history_review.json`、`r5_test_history_review.json`。R4完整记录在commit `b7899daf46d6b0692fc108dc2383134d2fab6022`；R3完整记录在本次起点commit；当前audit_summary/CSV是R5。更新V1.1诊断文件不等于覆盖V1原始实验结果，历史候选可从Git精确取回。
+
+## 可复现证据与 G-A Gate
+
+```bash
+.venv/bin/python scripts/run_offline.py pytest -q
+.venv/bin/python scripts/run_offline.py scenarios
+.venv/bin/python scripts/run_offline.py tasks
+.venv/bin/ruff check src tests scripts
+.venv/bin/ruff format --check src tests scripts
+.venv/bin/python -m pip check
+.venv/bin/python scripts/audit_v1_results.py --output .local/v1_1/reproduce
+```
+
+最后一条读取本机保留的私有历史轨迹；外部没有原始证据时只能复算公开CSV，不能声称独立重演完整语义审阅。R4/R5全量日志、独立审查及机器摘要分别存于忽略目录 `.local/v1_1/a/r4/`、`.local/v1_1/a/r5/`；关键反例和逐条理由已脱敏公开。最终日志为`r5/test_full_final.log`。新增原测试AST校验确认起点节点不变；敏感字段扫描仅证明已检查的模式，不替代通用隐私证明。
+
+| G-A验收项 | 当前结果 | 证据 |
+|---|---|---|
+| 版本/hash、分层复算 | 工程具备；接受冻结FAIL | 2.0.2 candidate_manifest / audit_summary，未验收 |
+| 已知误判正负例全部通过 | **FAIL** | R3/R4已修，但R5新增3确定误放仍失败 |
+| 360一一对应及改判解释 | PASS | 360verified；40条V1差异、1条R4差异，两角色交叉审阅 |
+| 原564/11场景/7任务回归 | PASS | 原回归无退化；不等同候选全量通过 |
+| 原通过样本审计 | 原证据保留 | R3两个固定40，78不同run；R4审46差异，R5审变化及复核不变项 |
+| V1冻结/业务安全实现不变 | PASS | 原manifest/工件/Tag检查，原始输入hash一致 |
+| 最新远端CI成功 | 未验证/not_run | 起点Actions API403；最终推送记录见交付补充，不假称成功 |
+| G-A总体、后续继续资格 | **FAIL / BLOCKED** | 两轮追加额度耗尽；没有TECH_PASS，不进入B–E |
+
+## 规则复杂度判断与建议（未实施）
+
+当前问题已超出单个正则遗漏。虽然本轮仅净增80行、未加依赖，但多层切分、固定前缀窗口、谓词/修饰词白名单共同承担语义，产生“多切导致正确跨句事实unknown、少切导致否定泄漏”的系统性矛盾。R4/R5连续暴露同根误放，说明在目前开放式自然语言范围内，维护复杂度与可信覆盖不匹配。继续添加同义词/修饰词不能证明组合表达可靠。
+
+建议下一次先审查收敛后的评分契约：
+
+1. Business Outcome与硬Safety继续由业务状态、执行工具证据和审批因果顺序自动判定，保留B1安全语义。
+2. Response自动评分限定为事先声明、可枚举的事实及受支持格式；每项记录covered/unknown，不能把未检测到错误当作证明正确。
+3. 开放式完成/审批承诺、跨句金额归属和冲突话语单列语义审计；无法可靠解析时保持待审，并由可追溯人工审阅补充。完整成功须明确哪些必要回复条件已获证据支持，unknown不得猜成功。
+4. 在通用正负例和独立新Dev上验证新契约；V1历史只用于诊断。若采用结构化回复事实/receipt来降低歧义，需单独批准协议与Agent接口变化，再按新版本冻结；本轮不提前实现。
+
+以上是建议，不是已完成的新Oracle或自动裁判能力。现有候选保留为失败研究证据；TaskMemory效果、Token增长来源、Skill回退归因、M-opt/MS-opt和新Holdout均未开展或验证。下一步需要批准评分范围调整/新的修复验收安排，当前无需付费API预算。
+
+---
+
+# R4 轮次历史记录（2026-10-18）
 
 用户以 `1cffae39e684621d612bfaa21085ddae7a832bb6` 为起点追加最多 R4/R5 两轮离线修复与独立验收。**R4 FAIL / G-A BLOCKED**；原三个正例已修复，但独立 Review/Testing 新增 7 条通用反例仍失败。R5 尚待执行，B–E 未开始，新增付费请求 0。以下原 R3 报告保留作为历史记录，最新 R4 证据见本节及文末，不将历史停止状态误当作撤销新授权。
 

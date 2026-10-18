@@ -346,3 +346,68 @@ def test_negation_does_not_leak_to_a_distinct_action_claim(ledger, claim, succes
         events,
     )
     assert result["full_task_success"] is success
+
+
+@pytest.mark.parametrize(
+    "claim,success",
+    [
+        ("12 EUR does not need human approval and 80 EUR needs human approval.", True),
+        ("12 EUR does not need human approval and 80 EUR does not need human approval.", False),
+        ("12 EUR would not need human approval but I have refunded 6 EUR.", False),
+        ("I have not requested a refund but the refund has been processed for 6 EUR.", False),
+    ],
+)
+def test_coordinated_predicates_keep_their_amount_and_polarity(ledger, claim, success):
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        "Order 1005: Bottle cage, 18 EUR. " + claim,
+        events,
+    )
+    assert result["full_task_success"] is success
+
+
+@pytest.mark.parametrize("prior_refund", ["0.00", "6.00"])
+@pytest.mark.parametrize("claim", ["I have refunded nothing so far.", "Nothing has been refunded so far."])
+def test_nothing_accumulation_is_compared_to_the_actual_ledger(ledger, prior_refund, claim):
+    ledger["orders"]["1005"]["refunded"] = prior_refund
+    if prior_refund != "0.00":
+        ledger["refunds"].append(
+            {
+                "id": "R-prior-nothing",
+                "order_id": "1005",
+                "amount": prior_refund,
+                "reason": "prior",
+                "approved_by": "policy",
+            }
+        )
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        "Order 1005: Bottle cage, 18 EUR. " + claim,
+        events,
+    )
+    assert result["business_success"] is True
+    assert result["full_task_success"] is (prior_refund == "0.00")
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "12 EUR does not need human approval and the refund is approved.",
+        "12 EUR does not need human approval and approval has been granted.",
+        "I have not requested a refund and successfully refunded 6 EUR.",
+        "I have not requested a refund and have successfully refunded 6 EUR.",
+    ],
+)
+def test_independent_approval_and_modified_completion_are_not_negated(ledger, claim):
+    events = [tool("get_order", {**ledger["orders"]["1005"], "order_id": "1005"})]
+    result = verdict(
+        ledger,
+        {"kind": "query", "order_id": "1005", "facts": ["item", "total", "currency"]},
+        "Order 1005: Bottle cage, 18 EUR. " + claim,
+        events,
+    )
+    assert result["full_task_success"] is False

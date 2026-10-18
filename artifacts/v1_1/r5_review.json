@@ -1,0 +1,81 @@
+{
+  "reviewer": "ReviewerA",
+  "round": "R5",
+  "verdict": "FAIL",
+  "source_head": "b7899daf46d6b0692fc108dc2383134d2fab6022",
+  "oracle": {
+    "oracle_version": "2.0.2",
+    "oracle_hash": "7a0dcd3a8b755f194e6e19eed38c8e51a819fa2a8f5c9b61ec54789b019f7305",
+    "oracle_source_hashes": {
+      "oracle_v2.py": "848344b625902d19967d14401e99ef6ac09e5973910909847453784e08dc0cbd",
+      "evaluation.py": "af1a6baee3e196aa91a5d4973f7b1102a054474dbaca6d78be42d5c422248a39",
+      "policy.py": "2dbfba44de9d73ac29b6425547be559acb2c8cb95a32adfedba60b825ecb48a0",
+      "store.py": "d6e971f259b7ef2ed3e7bba4950f6c93d0ff3def93234bc34ee304357173d25a"
+    }
+  },
+  "input_sha256": "c36460177ef4f3761c917efd6e3fa362c315757fbc876795d5a631ad6609f24b",
+  "input_rows": 360,
+  "covered_rows": 360,
+  "union_reviewed": 40,
+  "v1_score_up": 13,
+  "v1_score_down": 27,
+  "r4_score_up": 0,
+  "r4_score_down": 1,
+  "r4_semantic_changed_rows": 1,
+  "response_unknown": 30,
+  "needs_review": 38,
+  "historical_disputes": 8,
+  "historical_disputes_new_pass": 0,
+  "api_calls": 0,
+  "crosscheck": {
+    "against": "TestB",
+    "runs": 40,
+    "identity_hash_score_mismatches": 0,
+    "semantic_disagreements": 0,
+    "note": "Only label naming differs for multi06; both classify correct response now unknown due separated amount."
+  },
+  "gate": "G-A FAIL / BLOCKED",
+  "stop": "No R6 and no Phase B-E execution. Scope adjustment recommendation only; not implemented.",
+  "independent_reviewer_pytest": {
+    "passed": 205,
+    "failed": 0,
+    "timing_seconds": 0.4,
+    "scope": "Oracle and acceptance before final new blockers added"
+  },
+  "independent_reviewer_probes": {
+    "initial": 45,
+    "crosscheck": 2,
+    "total": 47,
+    "definite_false_pass": 3,
+    "matching_expectation_including_unknown": 44
+  },
+  "test_role_final_full_suite": {
+    "passed": 781,
+    "failed": 3,
+    "total": 784,
+    "timing_seconds": 28.22,
+    "reviewer_verified_report_and_log": true,
+    "reviewer_claims_full_rerun": false
+  },
+  "business_regression": {
+    "original_tests": 564,
+    "scenarios_passed": 11,
+    "dev_tasks_passed": 7,
+    "source": "independent Testing execution, Reviewer report/log verification"
+  },
+  "source_size": {
+    "oracle_lines": 718,
+    "net_lines_since_r4": 23,
+    "added_lines_since_r4": 51,
+    "removed_lines_since_r4": 28,
+    "net_oracle_lines_since_extra_round_start": 80
+  },
+  "blockers_reference": "artifacts/v1_1/r5_blockers.json",
+  "history_reference": "artifacts/v1_1/r5_history_review.json",
+  "scope_recommendation": [
+    "Retain deterministic business state, authorization, tool execution and approval sequence checks.",
+    "Treat unverified free-form response semantics as unknown; unmatched errors do not prove correctness.",
+    "Only certify restricted, fully bound statements automatically; retain separate independent review and coverage metrics."
+  ],
+  "privacy": "No raw trace messages, business snapshots, customer PII or local trace paths."
+}

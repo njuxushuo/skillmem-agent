@@ -44,3 +44,6 @@ secrets.*
 # OS session locks next to runtime SQLite files
 *.sqlite.locks/
 *.db.locks/
+
+# User-supplied V1.1 plan retained locally; canonical copy is docs/optimization_plan_v1_1.md
+/SkillMem_Agent_V1_1_Optimization_Experiment_Plan.md

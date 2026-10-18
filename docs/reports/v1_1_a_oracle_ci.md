@@ -150,3 +150,9 @@ README.md / .gitignore 增量状态说明及重复输入文档忽略规则
 需用户批准额外 Phase A 修复/独立审查轮次，才能修正三个边界并重开 Gate；不需要为这项离线修复申请付费预算。必须保持已有失败断言与负例，再核验 360 条变化原因，避免扩大误放。远端需配置正常 GitHub 写认证，并在候选测试全部通过后验证确切提交 CI。
 
 Phase B 成本归因、C 因素分解/Memory 优化、D 路由、E 新任务与冻结全部 **not_run**。TaskMemory 与历史保留的独立收益、Token 增长来源、MS 退步归因及优化效果本轮均未验证。不得用 A 的后验分数补足这些结论，也不得称已完成离线 EVAL_READY。
+
+## 9. 最终保存与推送记录
+
+候选源码、全部失败断言、脱敏审计和阶段报告已保存在本地提交 **`2ec2e2fef5d8691cbb040033c1a7f0fb5d710c5b`**，标题 `wip(v1.1): preserve blocked Phase A oracle candidate and audit evidence`。它是失败候选快照，不是验收通过提交。随后只追加交付信息与独立最终报告；最新文档提交可用 `git log -1` 获取，避免报告自引用 SHA。
+
+向 `origin` 的 `v1.1/phase-a-blocked` 正常推送再次因 HTTPS 用户认证缺失失败，证据 `.local/v1_1/a/push_candidate.log`；没有远端候选 Commit URL 或对应成功 CI 可提供。分支仅本地，main 仍在 V1 最终版本，未创建通过 Tag。源码/测试/脚本空白检查通过；完整 diff 的空白提示来自 CSV 标准 CRLF 与原样方案 Markdown 的显式双空格换行，为保持输出及输入 hash 未修改这些字节。
